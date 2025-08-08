@@ -1,19 +1,17 @@
-const path = require('path');
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  distDir: process.env.NEXT_DIST_DIR || '.next',
-  output: process.env.NEXT_OUTPUT_MODE,
-  experimental: {
-    outputFileTracingRoot: path.join(__dirname, '../'),
-  },
   eslint: {
+    // Skip ESLint checks during production builds
     ignoreDuringBuilds: true,
   },
   typescript: {
+    // Do not allow production builds to successfully complete if there are type errors.
     ignoreBuildErrors: false,
   },
-  images: { unoptimized: true },
+  images: {
+    // Disable the built-in Image Optimization API for maximum compatibility
+    unoptimized: true,
+  },
 };
 
 module.exports = nextConfig;
