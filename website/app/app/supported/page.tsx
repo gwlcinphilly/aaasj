@@ -41,7 +41,6 @@ export default function SupportedPage() {
             <CardContent className="p-6">
               <h2 className="text-xl font-bold mb-3">Individual Donors</h2>
               <ul className="list-disc list-inside text-white/90 space-y-1">
-                <li id="individual-donors-leon-chen">Leon Chen</li>
                 <li>To be announced</li>
               </ul>
             </CardContent>
