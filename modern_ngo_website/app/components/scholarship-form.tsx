@@ -137,47 +137,81 @@ export default function ScholarshipForm() {
     const doc = new jsPDF({ unit: 'pt' })
 
     const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
     const marginX = 48
-    const cursor = { y: 64 }
+    const marginY = 48
+    let cursorY = marginY
+
+    const ensurePage = (additionalHeight = 0) => {
+      if (cursorY + additionalHeight > pageHeight - marginY) {
+        doc.addPage()
+        cursorY = marginY
+      }
+    }
+
+    const writeLine = (
+      text: string,
+      lineHeight = 14,
+      fontStyle: 'normal' | 'bold' | 'italic' = 'normal',
+      fontSize = 11,
+      x = marginX
+    ) => {
+      doc.setFont('helvetica', fontStyle)
+      doc.setFontSize(fontSize)
+      ensurePage(lineHeight)
+      doc.text(text, x, cursorY)
+      cursorY += lineHeight
+    }
+
+    const writeWrapped = (
+      text: string,
+      wrapWidth: number,
+      lineHeight = 14,
+      fontStyle: 'normal' | 'bold' | 'italic' = 'normal',
+      fontSize = 11,
+      x = marginX
+    ) => {
+      const lines = doc.splitTextToSize(text || '-', wrapWidth)
+      for (const line of lines) {
+        writeLine(line, lineHeight, fontStyle, fontSize, x)
+      }
+    }
 
     const addHeading = (text: string) => {
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(18)
-      doc.text(text, marginX, cursor.y)
-      cursor.y += 24
+      writeLine(text, 24, 'bold', 18)
     }
 
     const addSubheading = (text: string) => {
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(12)
-      doc.text(text, marginX, cursor.y)
-      cursor.y += 16
+      writeLine(text, 18, 'bold', 12)
     }
 
     const addParagraph = (text: string) => {
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(11)
-      const wrapped = doc.splitTextToSize(text || '-', pageWidth - marginX * 2)
-      doc.text(wrapped, marginX, cursor.y)
-      cursor.y += 16 + wrapped.length * 14
+      writeWrapped(text, pageWidth - marginX * 2, 14, 'normal', 11)
+      cursorY += 2
     }
 
     const addKeyValue = (key: string, value: string) => {
+      // Write key label
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(11)
-      doc.text(`${key}:`, marginX, cursor.y)
+      ensurePage(14)
+      doc.text(`${key}:`, marginX, cursorY)
+
+      // Write value, wrapped to the remaining width
+      const valueX = marginX + 80
+      const wrapped = doc.splitTextToSize(value || '-', pageWidth - valueX - marginX)
       doc.setFont('helvetica', 'normal')
-      const wrapped = doc.splitTextToSize(value || '-', pageWidth - marginX * 2 - 80)
-      doc.text(wrapped, marginX + 80, cursor.y)
-      cursor.y += Math.max(16, wrapped.length * 14)
+      doc.setFontSize(11)
+      for (const line of wrapped) {
+        ensurePage(14)
+        doc.text(line, valueX, cursorY)
+        cursorY += 14
+      }
     }
 
     // Header
     addHeading('2026 AAASJ Community Service Scholarship Application')
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    doc.text(`Generated: ${new Date().toLocaleString()}`, marginX, cursor.y)
-    cursor.y += 24
+    writeLine(`Generated: ${new Date().toLocaleString()}`, 16, 'normal', 10)
 
     // Student Profile
     addSubheading('Student Profile')
@@ -188,7 +222,7 @@ export default function ScholarshipForm() {
     addKeyValue('City', formData.city)
     addKeyValue('State', formData.state)
     addKeyValue('Zip', formData.zip)
-    cursor.y += 8
+    cursorY += 8
 
     // Academics & Activities
     addSubheading('Academic Awards / Achievements')
@@ -212,11 +246,14 @@ export default function ScholarshipForm() {
     addParagraph(formData.question3)
 
     // Footer note
-    doc.setFont('helvetica', 'italic')
-    doc.setFontSize(10)
-    const note = 'Note: Please attach your most recent high school transcript and this PDF when emailing your application to scholarship@aaa-sj.org.'
-    const wrappedNote = doc.splitTextToSize(note, pageWidth - marginX * 2)
-    doc.text(wrappedNote, marginX, doc.internal.pageSize.getHeight() - 64)
+    writeLine('', 6)
+    writeWrapped(
+      'Note: Please attach your most recent high school transcript and this PDF when emailing your application to scholarship@aaa-sj.org.',
+      pageWidth - marginX * 2,
+      12,
+      'italic',
+      10
+    )
 
     const filename = `AAASJ_Scholarship_Application_${formData.studentName || 'Applicant'}.pdf`
 

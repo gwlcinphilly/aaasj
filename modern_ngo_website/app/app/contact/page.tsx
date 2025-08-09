@@ -210,16 +210,14 @@ export default function ContactPage() {
                 <div className="space-y-3">
                   <Link href="/events">
                     <Button 
-                      variant="outline" 
-                      className="w-full justify-start border-white/20 text-white hover:bg-orange-400/20"
+                      className="w-full justify-start bg-green-700 hover:bg-green-800 text-white"
                     >
                       <Calendar className="w-4 h-4 mr-2" />
                       Join Upcoming Events
                     </Button>
                   </Link>
                   <Button 
-                    variant="outline" 
-                    className="w-full justify-start border-white/20 text-white hover:bg-orange-400/20"
+                    className="w-full justify-start bg-green-700 hover:bg-green-800 text-white"
                     onClick={() => {
                       document.getElementById('interest')?.focus()
                       const select = document.getElementById('interest') as HTMLSelectElement
@@ -230,8 +228,7 @@ export default function ContactPage() {
                     Volunteer Opportunities
                   </Button>
                   <Button 
-                    variant="outline" 
-                    className="w-full justify-start border-white/20 text-white hover:bg-orange-400/20"
+                    className="w-full justify-start bg-green-700 hover:bg-green-800 text-white"
                     onClick={() => {
                       document.getElementById('interest')?.focus()
                       const select = document.getElementById('interest') as HTMLSelectElement

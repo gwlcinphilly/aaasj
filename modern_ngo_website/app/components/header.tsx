@@ -14,6 +14,7 @@ const navigation = [
   { name: 'About Us', href: '/about' },
   { name: 'Events', href: '/events' },
   { name: 'Scholarship', href: '/scholarship' },
+  { name: 'Board Members', href: '/board' },
   { name: 'Contact', href: '/contact' },
 ]
 
@@ -115,7 +116,7 @@ export default function Header() {
                   </Button>
                 </Link>
                 <Link href="/login">
-                  <Button variant="outline" className="w-full border-white/30 text-white hover:bg-white/10">
+                  <Button className="w-full bg-red-600 hover:bg-red-700 text-white">
                     Log in
                   </Button>
                 </Link>

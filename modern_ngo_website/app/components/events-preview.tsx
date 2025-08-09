@@ -180,7 +180,7 @@ export default function EventsPreview() {
           className="text-center"
         >
           <Link href="/events">
-            <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 btn-hover">
+            <Button size="lg" className="bg-green-800 hover:bg-green-900 text-white px-8 py-4 btn-hover">
               View All Events
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>

@@ -14,7 +14,7 @@ export default function AuthButton() {
   if (!session) {
     return (
       <Link href="/login">
-        <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
+        <Button className="bg-red-600 hover:bg-red-700 text-white">
           Log in
         </Button>
       </Link>

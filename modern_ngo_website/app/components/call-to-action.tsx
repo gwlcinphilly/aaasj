@@ -49,7 +49,7 @@ export default function CallToAction() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/events">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8 py-4 btn-hover">
+              <Button size="lg" className="bg-green-800 hover:bg-green-900 text-white px-8 py-4 btn-hover">
                 <Users className="w-5 h-5 mr-2" />
                 Mid-autumn Festival
               </Button>
