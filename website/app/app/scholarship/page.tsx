@@ -15,9 +15,13 @@ export default function ScholarshipPage() {
     <div className="min-h-screen pt-20 px-4">
       <div className="max-w-5xl mx-auto py-12 text-white">
         <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">AAASJ Community Service Scholarship</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Leon Chen Community Service Scholarship</h1>
           <p className="text-white/90 text-lg max-w-3xl mx-auto">
-            Supporting Asian American students in South Jersey who demonstrate academic excellence, community service,
+            Named in honor of{' '}
+            <Link href="/supported#individual-donors-leon-chen" className="underline text-orange-300 hover:text-orange-200">
+              Leon Chen
+            </Link>
+            , this scholarship supports Asian American students in South Jersey who demonstrate academic excellence, community service,
             and contributions to the AAPI community.
           </p>
         </div>

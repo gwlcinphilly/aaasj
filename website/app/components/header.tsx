@@ -110,9 +110,9 @@ export default function Header() {
 
           {/* Right Controls */}
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/contact">
+            <Link href="/events">
               <Button className="bg-orange-500 hover:bg-orange-600 text-white btn-hover">
-                Join Our Community
+                Coming Events
               </Button>
             </Link>
             <AuthButton />
@@ -152,9 +152,9 @@ export default function Header() {
                 </Link>
               ))}
               <div className="px-3 py-2 grid grid-cols-2 gap-2">
-                <Link href="/contact">
+                <Link href="/events">
                   <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                    Join
+                    Coming Events
                   </Button>
                 </Link>
                 <Button onClick={handleMobilePopupLogin} className="w-full bg-red-600 hover:bg-red-700 text-white">
