@@ -1,9 +1,11 @@
 'use client'
 
-import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 
-const board = [
+type Member = { name: string; note?: string }
+type BoardSection = { role: string; members: Member[] }
+
+const board: BoardSection[] = [
   {
     role: 'President',
     members: [
