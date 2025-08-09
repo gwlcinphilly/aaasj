@@ -5,6 +5,7 @@ import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from 'sonner'
 import Header from '@/components/header'
+import { AuthSessionProvider } from '@/components/auth-session-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,13 +23,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700">
-            <Header />
-            <main>{children}</main>
-            <Toaster />
-          </div>
-        </ThemeProvider>
+        <AuthSessionProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+            <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700">
+              <Header />
+              <main>{children}</main>
+              <Toaster />
+            </div>
+          </ThemeProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   )

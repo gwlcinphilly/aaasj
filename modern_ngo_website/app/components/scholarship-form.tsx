@@ -1,15 +1,16 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Award, FileText, Users, DollarSign, Mail, Clock } from 'lucide-react'
+import { Calendar, Award, FileText, Users, DollarSign, Mail, Clock, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { jsPDF } from 'jspdf'
 
 export default function ScholarshipForm() {
   const [formData, setFormData] = useState({
@@ -28,22 +29,205 @@ export default function ScholarshipForm() {
     question3: ''
   })
 
-  const [charCounts, setCharCounts] = useState({
+  const [wordCounts, setWordCounts] = useState({
     question1: 0,
     question2: 0,
-    question3: 0
+    question3: 0,
   })
+
+  const [uploads, setUploads] = useState<File[]>([])
+
+  // Application deadline (local time)
+  const applicationDeadline = useMemo(() => new Date('2025-09-15T23:59:59'), [])
+
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  })
+
+  const isPastDeadline = useMemo(() => Date.now() >= applicationDeadline.getTime(), [applicationDeadline])
+
+  useEffect(() => {
+    if (isPastDeadline) return
+
+    const tick = () => {
+      const now = new Date().getTime()
+      const diff = applicationDeadline.getTime() - now
+
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+        return
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+      setTimeLeft({ days, hours, minutes, seconds })
+    }
+
+    tick()
+    const interval = setInterval(tick, 1000)
+    return () => clearInterval(interval)
+  }, [applicationDeadline, isPastDeadline])
+
+  const countWords = (text: string) => {
+    return (text.trim().match(/\b\w+\b/g) || []).length
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    
-    // Update character counts for essay questions
+
     if (field === 'question1' || field === 'question2' || field === 'question3') {
-      setCharCounts(prev => ({ ...prev, [field]: value.length }))
+      const wc = countWords(value)
+      setWordCounts(prev => ({ ...prev, [field]: wc }))
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFilesSelected = (filesList: FileList | null) => {
+    if (!filesList) return
+    const incoming = Array.from(filesList)
+
+    // Validate types and sizes
+    const allowedTypes = new Set([
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/heic',
+    ])
+
+    const maxFileSizeMb = 10
+    const maxTotalSizeMb = 4
+
+    const nextUploads: File[] = [...uploads]
+
+    for (const file of incoming) {
+      if (!allowedTypes.has(file.type)) {
+        toast.error(`Unsupported file type: ${file.name}`)
+        continue
+      }
+      if (file.size > maxFileSizeMb * 1024 * 1024) {
+        toast.error(`File too large (> ${maxFileSizeMb}MB): ${file.name}`)
+        continue
+      }
+      nextUploads.push(file)
+    }
+
+    const totalSize = nextUploads.reduce((sum, f) => sum + f.size, 0)
+    if (totalSize > maxTotalSizeMb * 1024 * 1024) {
+      toast.error(`Total attachments exceed ${maxTotalSizeMb}MB. Please remove some files.`)
+      return
+    }
+
+    setUploads(nextUploads)
+  }
+
+  const removeUploadAt = (idx: number) => {
+    setUploads(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  function generateApplicationPdf(): { blob: Blob; filename: string } {
+    const doc = new jsPDF({ unit: 'pt' })
+
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const marginX = 48
+    const cursor = { y: 64 }
+
+    const addHeading = (text: string) => {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(18)
+      doc.text(text, marginX, cursor.y)
+      cursor.y += 24
+    }
+
+    const addSubheading = (text: string) => {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(12)
+      doc.text(text, marginX, cursor.y)
+      cursor.y += 16
+    }
+
+    const addParagraph = (text: string) => {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(11)
+      const wrapped = doc.splitTextToSize(text || '-', pageWidth - marginX * 2)
+      doc.text(wrapped, marginX, cursor.y)
+      cursor.y += 16 + wrapped.length * 14
+    }
+
+    const addKeyValue = (key: string, value: string) => {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.text(`${key}:`, marginX, cursor.y)
+      doc.setFont('helvetica', 'normal')
+      const wrapped = doc.splitTextToSize(value || '-', pageWidth - marginX * 2 - 80)
+      doc.text(wrapped, marginX + 80, cursor.y)
+      cursor.y += Math.max(16, wrapped.length * 14)
+    }
+
+    // Header
+    addHeading('2026 AAASJ Community Service Scholarship Application')
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.text(`Generated: ${new Date().toLocaleString()}`, marginX, cursor.y)
+    cursor.y += 24
+
+    // Student Profile
+    addSubheading('Student Profile')
+    addKeyValue('Student Name', formData.studentName)
+    addKeyValue('Email', formData.email)
+    addKeyValue('Phone', formData.phone)
+    addKeyValue('Address', `${formData.address || ''}`)
+    addKeyValue('City', formData.city)
+    addKeyValue('State', formData.state)
+    addKeyValue('Zip', formData.zip)
+    cursor.y += 8
+
+    // Academics & Activities
+    addSubheading('Academic Awards / Achievements')
+    addParagraph(formData.academicAwards)
+
+    addSubheading('Volunteer Work / Community Service')
+    addParagraph(formData.volunteerWork)
+
+    addSubheading('Groups / Clubs / Organizations')
+    addParagraph(formData.groupsClubs)
+
+    // Essay Questions
+    addSubheading('Essay Questions')
+    addParagraph('1) What do you believe are the most pressing issues or needs in the Asian American community in South Jersey?')
+    addParagraph(formData.question1)
+
+    addParagraph('2) What have you done to help/address these issues/needs?')
+    addParagraph(formData.question2)
+
+    addParagraph('3) Please share any past community services, contributions, and achievements you have made to the Asian American community in South Jersey.')
+    addParagraph(formData.question3)
+
+    // Footer note
+    doc.setFont('helvetica', 'italic')
+    doc.setFontSize(10)
+    const note = 'Note: Please attach your most recent high school transcript and this PDF when emailing your application to scholarship@aaa-sj.org.'
+    const wrappedNote = doc.splitTextToSize(note, pageWidth - marginX * 2)
+    doc.text(wrappedNote, marginX, doc.internal.pageSize.getHeight() - 64)
+
+    const filename = `AAASJ_Scholarship_Application_${formData.studentName || 'Applicant'}.pdf`
+
+    // Create a blob for server upload and also trigger a local download
+    const blob = doc.output('blob')
+    doc.save(filename)
+
+    return { blob, filename }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     // Basic validation
@@ -52,56 +236,45 @@ export default function ScholarshipForm() {
       return
     }
 
-    // Check essay word limits (approximately 100 words = 500 characters)
-    if (charCounts.question1 > 600 || charCounts.question2 > 600 || charCounts.question3 > 600) {
-      toast.error('Please keep essay answers under 100 words each')
+    if (isPastDeadline) {
+      toast.error('The application deadline has passed. Submissions are closed.')
       return
     }
 
-    // Create email body
-    const emailBody = `
-2026 AAASJ Community Service Scholarship Application
+    // Essay word limits: 500 words max each
+    if (wordCounts.question1 > 500 || wordCounts.question2 > 500 || wordCounts.question3 > 500) {
+      toast.error('Please keep each essay answer under 500 words')
+      return
+    }
 
-STUDENT PROFILE:
-Student Name: ${formData.studentName}
-Address: ${formData.address}
-City: ${formData.city}
-State: ${formData.state}
-Zip: ${formData.zip}
-Email: ${formData.email}
-Phone: ${formData.phone}
+    // Build server payload
+    const { blob: pdfBlob, filename: pdfFilename } = generateApplicationPdf()
 
-Academic Awards/Achievements:
-${formData.academicAwards}
+    const formDataToSend = new FormData()
+    Object.entries(formData).forEach(([key, value]) => {
+      formDataToSend.append(key, value)
+    })
+    // Attach generated PDF
+    formDataToSend.append('generatedPdf', pdfBlob, pdfFilename)
+    // Attach uploads
+    uploads.forEach((file) => formDataToSend.append('files', file, file.name))
 
-Volunteer Work/Community Service:
-${formData.volunteerWork}
+    try {
+      const res = await fetch('/api/scholarship/submit', {
+        method: 'POST',
+        body: formDataToSend,
+      })
 
-Groups/Clubs/Organizations:
-${formData.groupsClubs}
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.message || 'Submission failed')
+      }
 
-ESSAY QUESTIONS:
-
-1. What do you believe are the most pressing issues or needs in the Asian American community in South Jersey? (Less than 100 words)
-${formData.question1}
-
-2. What have you done to help/address these issues/needs? (Less than 100 words)
-${formData.question2}
-
-3. Please share any past community services, contributions, and achievements you have made to the Asian American community in South Jersey. (Less than 100 words)
-${formData.question3}
-
-Note: High school transcript will be attached separately as required.
-    `.trim()
-
-    // Create mailto link
-    const subject = '2026 AAASJ Community Service Scholarship Application - ' + formData.studentName
-    const mailtoLink = `mailto:scholarship@aaa-sj.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`
-    
-    // Open email client
-    window.location.href = mailtoLink
-    
-    toast.success('Email client opened! Please attach your transcript and send the application.')
+      toast.success('Application submitted! We have emailed your application to scholarship@aaa-sj.org.')
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error?.message || 'Could not submit application. Please try again later.')
+    }
   }
 
   return (
@@ -116,16 +289,36 @@ Note: High school transcript will be attached separately as required.
             Community Service Scholarship supporting Asian American students in South Jersey
           </p>
           
-          {/* Deadline Alert */}
-          <Card className="bg-orange-500/20 backdrop-blur-sm border-orange-400/30 mb-8">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center gap-2 text-orange-400 mb-2">
-                <Clock className="w-5 h-5" />
-                <span className="font-semibold text-lg">Application Deadline</span>
-              </div>
-              <p className="text-white text-2xl font-bold">September 15, 2025</p>
-            </CardContent>
-          </Card>
+          {/* Deadline / Countdown */}
+          {!isPastDeadline ? (
+            <Card className="bg-orange-500/20 backdrop-blur-sm border-orange-400/30 mb-8">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-center gap-2 text-orange-400 mb-2">
+                  <Clock className="w-5 h-5" />
+                  <span className="font-semibold text-lg">Application Deadline</span>
+                </div>
+                <p className="text-white text-2xl font-bold text-center">September 15, 2025</p>
+                <p className="text-white/90 mt-2 text-center">
+                  Time remaining: 
+                  <span className="font-semibold ml-2">
+                    {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+                  </span>
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="bg-red-500/20 backdrop-blur-sm border-red-400/30 mb-8">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-center gap-2 text-red-300 mb-2">
+                  <Clock className="w-5 h-5" />
+                  <span className="font-semibold text-lg">Applications Closed</span>
+                </div>
+                <p className="text-white text-center">
+                  The deadline for the 2026 scholarship has passed. Please check back next year.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Award Information */}
@@ -326,7 +519,7 @@ Note: High school transcript will be attached separately as required.
                 <div>
                   <Label htmlFor="question1" className="text-white block mb-2">
                     1. What do you believe are the most pressing issues or needs in the Asian American community in South Jersey?
-                    <Badge variant="outline" className="ml-2 border-orange-400/50 text-orange-400">Less than 100 words</Badge>
+                    <Badge variant="outline" className="ml-2 border-orange-400/50 text-orange-400">Up to 500 words</Badge>
                   </Label>
                   <Textarea
                     id="question1"
@@ -335,15 +528,15 @@ Note: High school transcript will be attached separately as required.
                     className="bg-white/10 border-white/20 text-white placeholder-white/50 min-h-[120px]"
                     placeholder="Share your thoughts on the challenges and needs..."
                   />
-                  <p className={`text-sm mt-1 ${charCounts.question1 > 600 ? 'text-red-400' : 'text-white/60'}`}>
-                    {Math.round(charCounts.question1 / 5)} words (~{charCounts.question1} characters)
+                  <p className={`${wordCounts.question1 > 500 ? 'text-red-400' : 'text-white/60'} text-sm mt-1`}>
+                    {wordCounts.question1} / 500 words
                   </p>
                 </div>
 
                 <div>
                   <Label htmlFor="question2" className="text-white block mb-2">
                     2. What have you done to help/address these issues/needs?
-                    <Badge variant="outline" className="ml-2 border-orange-400/50 text-orange-400">Less than 100 words</Badge>
+                    <Badge variant="outline" className="ml-2 border-orange-400/50 text-orange-400">Up to 500 words</Badge>
                   </Label>
                   <Textarea
                     id="question2"
@@ -352,15 +545,15 @@ Note: High school transcript will be attached separately as required.
                     className="bg-white/10 border-white/20 text-white placeholder-white/50 min-h-[120px]"
                     placeholder="Describe your efforts and contributions..."
                   />
-                  <p className={`text-sm mt-1 ${charCounts.question2 > 600 ? 'text-red-400' : 'text-white/60'}`}>
-                    {Math.round(charCounts.question2 / 5)} words (~{charCounts.question2} characters)
+                  <p className={`${wordCounts.question2 > 500 ? 'text-red-400' : 'text-white/60'} text-sm mt-1`}>
+                    {wordCounts.question2} / 500 words
                   </p>
                 </div>
 
                 <div>
                   <Label htmlFor="question3" className="text-white block mb-2">
                     3. Please share any past community services, contributions, and achievements you have made to the Asian American community in South Jersey.
-                    <Badge variant="outline" className="ml-2 border-orange-400/50 text-orange-400">Less than 100 words</Badge>
+                    <Badge variant="outline" className="ml-2 border-orange-400/50 text-orange-400">Up to 500 words</Badge>
                   </Label>
                   <Textarea
                     id="question3"
@@ -369,10 +562,34 @@ Note: High school transcript will be attached separately as required.
                     className="bg-white/10 border-white/20 text-white placeholder-white/50 min-h-[120px]"
                     placeholder="Share your achievements and contributions..."
                   />
-                  <p className={`text-sm mt-1 ${charCounts.question3 > 600 ? 'text-red-400' : 'text-white/60'}`}>
-                    {Math.round(charCounts.question3 / 5)} words (~{charCounts.question3} characters)
+                  <p className={`${wordCounts.question3 > 500 ? 'text-red-400' : 'text-white/60'} text-sm mt-1`}>
+                    {wordCounts.question3} / 500 words
                   </p>
                 </div>
+              </div>
+
+              {/* Attachments */}
+              <div className="space-y-2">
+                <Label className="text-white">Attachments (PDF, DOC, DOCX, images) — up to 25MB total</Label>
+                <Input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,image/*"
+                  onChange={(e) => handleFilesSelected(e.target.files)}
+                  className="bg-white/10 border-white/20 text-white file:text-white"
+                />
+                {uploads.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {uploads.map((file, idx) => (
+                      <div key={`${file.name}-${idx}`} className="flex items-center justify-between text-sm text-white/90 bg-white/5 rounded p-2">
+                        <span className="truncate mr-2">{file.name}</span>
+                        <button type="button" onClick={() => removeUploadAt(idx)} className="text-white/70 hover:text-white flex items-center gap-1">
+                          <X className="w-4 h-4" /> Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Important Note */}
@@ -380,7 +597,7 @@ Note: High school transcript will be attached separately as required.
                 <CardContent className="p-4">
                   <p className="text-blue-200 text-sm">
                     <FileText className="w-4 h-4 inline mr-2" />
-                    <strong>Important:</strong> Remember to attach your most recent high school transcript when emailing this application. All components must be received by September 15, 2025.
+                    <strong>Important:</strong> A PDF of your application will be generated and attached, along with any files you upload. All components must be received by September 15, 2025.
                   </p>
                 </CardContent>
               </Card>
@@ -388,10 +605,11 @@ Note: High school transcript will be attached separately as required.
               {/* Submit Button */}
               <Button 
                 type="submit" 
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 text-lg font-semibold btn-hover"
+                disabled={isPastDeadline}
+                className={`w-full text-white py-4 text-lg font-semibold btn-hover ${isPastDeadline ? 'bg-gray-500 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-600'}`}
               >
                 <Mail className="w-5 h-5 mr-2" />
-                Submit Application via Email
+                {isPastDeadline ? 'Applications Closed' : 'Submit Application via Email'}
               </Button>
             </form>
           </CardContent>

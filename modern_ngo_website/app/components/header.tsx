@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import AuthButton from '@/components/auth-button'
 import { Menu, X, Heart } from 'lucide-react'
 
 const navigation = [
@@ -64,13 +65,14 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* CTA Button */}
-          <div className="hidden md:block">
+          {/* Right Controls */}
+          <div className="hidden md:flex items-center gap-3">
             <Link href="/contact">
               <Button className="bg-orange-500 hover:bg-orange-600 text-white btn-hover">
                 Join Our Community
               </Button>
             </Link>
+            <AuthButton />
           </div>
 
           {/* Mobile menu button */}
@@ -106,10 +108,15 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
-              <div className="px-3 py-2">
+              <div className="px-3 py-2 grid grid-cols-2 gap-2">
                 <Link href="/contact">
                   <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                    Join Our Community
+                    Join
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button variant="outline" className="w-full border-white/30 text-white hover:bg-white/10">
+                    Log in
                   </Button>
                 </Link>
               </div>
