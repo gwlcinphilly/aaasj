@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import AuthButton from '@/components/auth-button'
 import { Menu, X, Heart } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -23,6 +24,7 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const { data: session } = useSession()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,46 +35,7 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const handleMobilePopupLogin = () => {
-    const currentUrl = window.location.href
-    const origin = window.location.origin
-    const width = 500
-    const height = 650
-    const left = window.screenX + (window.outerWidth - width) / 2
-    const top = window.screenY + (window.outerHeight - height) / 2
-    const features = `popup=yes,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${width},height=${height},top=${top},left=${left}`
-
-    const popup = window.open('about:blank', 'aaasj-auth', features)
-    const signinPath = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(currentUrl)}`
-    const fullUrl = `${origin}${signinPath}`
-
-    if (!popup) {
-      window.location.href = fullUrl
-      return
-    }
-
-    try {
-      popup.location.href = fullUrl
-      const timer = setInterval(() => {
-        try {
-          if (popup.closed) {
-            clearInterval(timer)
-            window.location.replace(currentUrl)
-            return
-          }
-          const sameOrigin = popup.location.origin === origin
-          if (sameOrigin) {
-            clearInterval(timer)
-            popup.close()
-            window.location.replace(currentUrl)
-          }
-        } catch (_) {}
-      }, 500)
-    } catch (_) {
-      popup.close()
-      window.location.href = fullUrl
-    }
-  }
+  // Removed popup-based login; mobile login links to /login for full-page auth
 
   return (
     <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
@@ -115,6 +78,11 @@ export default function Header() {
                 Coming Events
               </Button>
             </Link>
+            {session && (
+              <Link href="/admin">
+                <Button className="bg-white/10 hover:bg-white/20 text-white">Admin</Button>
+              </Link>
+            )}
             <AuthButton />
           </div>
 
@@ -157,9 +125,15 @@ export default function Header() {
                     Coming Events
                   </Button>
                 </Link>
-                <Button onClick={handleMobilePopupLogin} className="w-full bg-red-600 hover:bg-red-700 text-white">
-                  Log in
-                </Button>
+                {session ? (
+                  <Link href="/admin">
+                    <Button className="w-full bg-white/10 hover:bg-white/20 text-white">Admin</Button>
+                  </Link>
+                ) : (
+                  <Link href="/login">
+                    <Button className="w-full bg-red-600 hover:bg-red-700 text-white">Log in</Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

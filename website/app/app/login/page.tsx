@@ -1,75 +1,76 @@
 'use client'
 
-import { signIn } from 'next-auth/react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSession, signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function LoginPage() {
-  const handlePopupLogin = async () => {
-    const currentUrl = window.location.href
-    const origin = window.location.origin
+  const { status } = useSession()
+  const router = useRouter()
 
-    const width = 500
-    const height = 650
-    const left = window.screenX + (window.outerWidth - width) / 2
-    const top = window.screenY + (window.outerHeight - height) / 2
-    const features = `popup=yes,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${width},height=${height},top=${top},left=${left}`
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
-    // Open a blank popup synchronously to avoid blockers
-    const popup = window.open('about:blank', 'aaasj-auth', features)
+  const normalizedEmail = useMemo(() => {
+    const trimmed = email.trim()
+    if (!trimmed) return ''
+    return trimmed.includes('@') ? trimmed.toLowerCase() : `${trimmed.toLowerCase()}@aaa-sj.org`
+  }, [email])
 
-    // Use current page as callback URL so the popup returns here
-    const signinPath = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(currentUrl)}`
-    const fullUrl = `${origin}${signinPath}`
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/admin')
+    }
+  }, [status, router])
 
-    if (!popup) {
-      // Fallback to normal redirect if popup was blocked
-      await signIn('google', { callbackUrl: currentUrl })
+  const handleLogin = async () => {
+    setError(null)
+    const callbackUrl = '/admin'
+
+    if (!normalizedEmail.endsWith('@aaa-sj.org')) {
+      setError('Please use your aaa-sj.org email account')
       return
     }
 
-    try {
-      // Navigate the popup to the Google sign-in URL
-      popup.location.href = fullUrl
-
-      // Poll: when popup returns to same-origin, close and refresh parent (stay on same page)
-      const timer = setInterval(() => {
-        try {
-          if (popup.closed) {
-            clearInterval(timer)
-            window.location.replace(currentUrl)
-            return
-          }
-          const sameOrigin = popup.location.origin === origin
-          if (sameOrigin) {
-            clearInterval(timer)
-            popup.close()
-            window.location.replace(currentUrl)
-          }
-        } catch (_) {
-          // Ignore cross-origin access errors until it returns
-        }
-      }, 500)
-    } catch (_e) {
-      // If anything goes wrong, fallback to normal redirect
-      popup.close()
-      await signIn('google', { callbackUrl: currentUrl })
-    }
+    await signIn('google', { callbackUrl, login_hint: normalizedEmail } as any)
   }
 
   return (
     <div className="min-h-screen pt-20 px-4">
       <div className="max-w-xl mx-auto py-16">
         <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-          <CardContent className="p-8 text-center">
-            <h1 className="text-3xl font-bold text-white mb-4">Log in</h1>
-            <p className="text-white/80 mb-8">Sign in with your AAA-SJ Google account to access private features.</p>
-            <Button
-              onClick={handlePopupLogin}
-              className="w-full bg-red-600 hover:bg-red-700 text-white"
-            >
-              Login with AAA-SJ account
-            </Button>
+          <CardContent className="p-8">
+            <h1 className="text-3xl font-bold text-white mb-2">Log in</h1>
+            <p className="text-white/80 mb-6">Use your AAA-SJ Google account to access the admin area.</p>
+
+            <div className="space-y-3 mb-6">
+              <Label htmlFor="email" className="text-white/90">AAA-SJ email</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="email"
+                  type="email"
+                  inputMode="email"
+                  placeholder="you@aaa-sj.org"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-white/90"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleLogin()
+                  }}
+                />
+                <Button onClick={handleLogin} className="bg-red-600 hover:bg-red-700 text-white">Continue</Button>
+              </div>
+              {error && <p className="text-red-300 text-sm">{error}</p>}
+              {!error && normalizedEmail && !normalizedEmail.endsWith('@aaa-sj.org') && (
+                <p className="text-red-300 text-sm">Please enter an aaa-sj.org email</p>
+              )}
+            </div>
+
+            <p className="text-white/70 text-sm">You'll be redirected to Google to authenticate. Only accounts in the aaa-sj.org domain are allowed.</p>
           </CardContent>
         </Card>
       </div>

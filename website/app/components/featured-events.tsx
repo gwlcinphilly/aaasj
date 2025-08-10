@@ -8,8 +8,23 @@ import { Button } from '@/components/ui/button'
 import { Calendar, Clock, MapPin, GraduationCap, Users, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
+type EventItem = {
+  id: string
+  title: string
+  date: string
+  time?: string
+  location?: string
+  description?: string
+  image?: string
+  category?: string
+  status: 'upcoming' | 'past'
+  link?: string
+}
+
 export default function FeaturedEvents() {
   const [isVisible, setIsVisible] = useState(false)
+  const [events, setEvents] = useState<EventItem[]>([])
+  const [loading, setLoading] = useState(true)
   const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -29,47 +44,83 @@ export default function FeaturedEvents() {
     return () => observer.disconnect()
   }, [])
 
-  const featuredEvents = [
-    {
-      id: 1,
-      title: "2026 AAASJ Community Service Scholarship",
-      deadline: "September 15, 2025",
-      type: "Scholarship Application",
-      description: "Awards up to $1,000 for Gold level, $500 for Silver, and $300 for Bronze. Open to high school juniors and seniors demonstrating academic excellence and community service.",
-      keyPoints: [
-        "Up to $1,000 award",
-        "High school juniors & seniors",
-        "Academic excellence required",
-        "Community service focus"
-      ],
-      icon: GraduationCap,
-      iconColor: "text-blue-400",
-      iconBg: "bg-blue-400/20",
-      link: "/scholarship",
-      buttonText: "Apply Now",
-      buttonStyle: "bg-blue-500 hover:bg-blue-600"
-    },
-    {
-      id: 2,
-      title: "Mid-autumn & Wellness Festival",
-      date: "October 4, 2025",
-      time: "11:30 AM - 3:30 PM",
-      location: "Cherry Hill Mall (Near Barnes & Noble)",
-      description: "Join us for a celebration of culture, wellness, and community! Enjoy traditional moon cakes, cultural performances, wellness activities, and family fun.",
-      keyPoints: [
-        "Cultural performances",
-        "Traditional moon cakes", 
-        "Wellness activities",
-        "Family-friendly event"
-      ],
-      icon: Users,
-      iconColor: "text-orange-400",
-      iconBg: "bg-orange-400/20", 
-      link: "/events",
-      buttonText: "Learn More",
-      buttonStyle: "bg-orange-500 hover:bg-orange-600"
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch('/api/events')
+        if (!res.ok) throw new Error('Failed to fetch events')
+        const data = await res.json()
+        setEvents(data)
+      } catch (error) {
+        console.error('Error fetching events:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    fetchEvents()
+  }, [])
+
+  // Get featured events (upcoming events, limited to 2)
+  const featuredEvents = events
+    .filter(event => event.status === 'upcoming')
+    .slice(0, 2)
+    .map(event => {
+      const isScholarship = event.category?.toLowerCase().includes('scholarship') || 
+                           event.title.toLowerCase().includes('scholarship')
+      
+      return {
+        id: event.id,
+        title: event.title,
+        deadline: event.date,
+        date: event.date,
+        time: event.time,
+        location: event.location,
+        description: event.description || '',
+        keyPoints: isScholarship ? [
+          "Up to $1,000 award",
+          "High school juniors & seniors", 
+          "Academic excellence required",
+          "Community service focus"
+        ] : [
+          "Cultural performances",
+          "Community activities",
+          "Family-friendly event",
+          "Free admission"
+        ],
+        icon: isScholarship ? GraduationCap : Users,
+        iconColor: isScholarship ? "text-blue-400" : "text-orange-400",
+        iconBg: isScholarship ? "bg-blue-400/20" : "bg-orange-400/20",
+        link: event.link || "/events",
+        buttonText: isScholarship ? "Apply Now" : "Learn More",
+        buttonStyle: isScholarship ? "bg-blue-500 hover:bg-blue-600" : "bg-orange-500 hover:bg-orange-600"
+      }
+    })
+
+  if (loading) {
+    return (
+      <section ref={sectionRef} className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center text-white/70 py-12">
+            <p className="text-xl">Loading featured opportunities...</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (featuredEvents.length === 0) {
+    return (
+      <section ref={sectionRef} className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center text-white/70 py-12">
+            <p className="text-xl">No featured opportunities at the moment.</p>
+            <p className="mt-2">Check back soon for new events!</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section ref={sectionRef} className="py-16 px-4">
@@ -110,13 +161,7 @@ export default function FeaturedEvents() {
                       {event.deadline && (
                         <div className="flex items-center text-orange-400 text-sm mb-2">
                           <Calendar className="w-4 h-4 mr-2" />
-                          Deadline: {event.deadline}
-                        </div>
-                      )}
-                      {event.date && (
-                        <div className="flex items-center text-orange-400 text-sm mb-2">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          {event.date}
+                          {event.deadline}
                         </div>
                       )}
                       {event.time && (

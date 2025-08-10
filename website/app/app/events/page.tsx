@@ -1,5 +1,6 @@
+'use client'
 
-import { Metadata } from 'next'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
@@ -7,108 +8,18 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar, MapPin, Users, Clock, ExternalLink, Heart } from 'lucide-react'
 
-export const metadata: Metadata = {
-  title: 'Events - AAASJ',
-  description: 'Join our community events including AAPI festivals, 5K runs, advocacy campaigns, and cultural celebrations. Everyone is welcome!',
+type EventItem = {
+  id: string
+  title: string
+  date: string
+  time?: string
+  location?: string
+  description?: string
+  image?: string
+  category?: string
+  status: 'upcoming' | 'past'
+  link?: string
 }
-
-const upcomingEvents = [
-  {
-    id: 1,
-    title: '2025 AAASJ Community Service Scholarship',
-    date: 'Deadline: September 15, 2025',
-    time: 'Apply Now',
-    location: 'Online Application',
-    description:
-      'Apply for our community service scholarship! Awards up to $1,000 for Gold level, $500 for Silver, and $300 for Bronze. Open to high school juniors and seniors demonstrating academic excellence and community service.',
-    image: '/images/event_flyer_1.png',
-    category: 'Scholarship',
-    status: 'upcoming',
-    link: '/scholarship',
-  },
-  {
-    id: 2,
-    title: 'Mid-autumn & Wellness Festival',
-    date: 'October 4, 2025',
-    time: '11:30 AM - 3:30 PM',
-    location: 'Hung Fa Supermarket Parking Lot',
-    description:
-      'Celebrate Mid-autumn Festival with our community! Traditional foods, wellness activities, cultural performances, and family-friendly entertainment. Rain date: October 5, 2025.',
-    image: '/images/event_flyer_2.png',
-    category: 'Festival',
-    status: 'upcoming',
-  },
-]
-
-const pastEvents = [
-  {
-    id: 3,
-    title: '5th Annual AAPI Heritage Month Festival',
-    date: 'May 18, 2025',
-    location: 'Cherry Hill West High School, 2101 Chapel Ave',
-    description:
-      'Our annual celebration of Asian American and Pacific Islander heritage with cultural performances, food, music, crafts, and community activities. Free admission for the public!',
-    image: '/images/event_flyer_2.png',
-    category: 'Festival',
-    attendees: undefined,
-  },
-  {
-    id: 4,
-    title: 'Leon Chen Community Service Scholarship Dinner',
-    date: 'March 22, 2025',
-    location: 'TBD - South Jersey',
-    description:
-      'Annual scholarship dinner honoring community service and supporting Asian American students in South Jersey. An evening of recognition and celebration.',
-    image: '/images/event_flyer_1.png',
-    category: 'Scholarship',
-    attendees: undefined,
-  },
-  {
-    id: 5,
-    title: '4th Annual AAPI Heritage Month Festival',
-    date: 'May 21, 2024',
-    location: 'Cherry Hill West High School',
-    description:
-      'Successful cultural celebration with over 600 community members attending, featuring traditional performances, food vendors, and cultural displays.',
-    image: '/images/aaasj_header_bg.png',
-    category: 'Festival',
-    attendees: 600,
-  },
-  {
-    id: 6,
-    title: 'Community Service Day',
-    date: 'November 12, 2024',
-    location: 'Various locations in South Jersey',
-    description:
-      'Volunteers came together to serve local food banks, community centers, and support families in need throughout South Jersey.',
-    image: '/images/aaasj_header_bg.png',
-    category: 'Service',
-    attendees: 85,
-  },
-  {
-    id: 7,
-    title: 'Leon Chen Scholarship Award Ceremony',
-    date: 'March 25, 2024',
-    location: 'Cherry Hill, NJ',
-    description:
-      'Annual scholarship award ceremony recognizing outstanding Asian American students for their academic achievements and community service contributions.',
-    image: '/images/aaasj_logo.png',
-    category: 'Scholarship',
-    attendees: 120,
-  },
-  {
-    id: 8,
-    title: 'Community Service Day',
-    date: 'November 12, 2023',
-    location: 'Various locations in Cherry Hill',
-    description:
-      'Volunteers came together to serve local food banks and community centers.',
-    image:
-      'https://imgs.search.brave.com/nS0QOlg7w0I1TkFcx0c8C85jZbSLzTx4RLcRN-088VM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvMTI3/MjcxNTA1OS9waG90/by9kZWxpdmVyeS1w/ZXJzb24tdXNpbmctZmFjZW1hc2stZGVsaXZlcnMtcGFja2FnZS10by1hLXJlc2lkZW5jZS13b21hbi5qcGc_cz02MTJ4NjEyJnc9MCZrPTIwJmM9LUJuQjd3NGNwbnljWjJoRGxhNnpNOVB3eGNOWmV4cUVUbGZ4eDl2dHg5az0',
-    category: 'Service',
-    attendees: 80,
-  },
-]
 
 const campaigns = [
   {
@@ -120,8 +31,32 @@ const campaigns = [
 ]
 
 export default function EventsPage() {
+  const [events, setEvents] = useState<EventItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch('/api/events')
+        if (!res.ok) throw new Error('Failed to fetch events')
+        const data = await res.json()
+        setEvents(data)
+      } catch (error) {
+        console.error('Error fetching events:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEvents()
+  }, [])
+
+  // Separate upcoming and past events
+  const upcomingEvents = events.filter(event => event.status === 'upcoming')
+  const pastEvents = events.filter(event => event.status === 'past')
+
   // Group past events by year (descending)
-  const pastByYear = pastEvents.reduce<Record<string, typeof pastEvents>>((acc, ev) => {
+  const pastByYear = pastEvents.reduce<Record<string, EventItem[]>>((acc, ev) => {
     const match = ev.date.match(/\b(20\d{2})\b/)
     const year = match ? match[1] : 'Other'
     if (!acc[year]) acc[year] = []
@@ -129,6 +64,16 @@ export default function EventsPage() {
     return acc
   }, {})
   const years = Object.keys(pastByYear).sort((a, b) => Number(b) - Number(a))
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-white text-xl">Loading events...</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen pt-20">
@@ -150,51 +95,65 @@ export default function EventsPage() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-12 text-center">
             Upcoming <span className="gradient-text">Events</span>
           </h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            {upcomingEvents.map((event) => (
-              <Card key={event.id} className="bg-white/10 backdrop-blur-sm border-white/20 card-hover">
-                <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                  <Image src={event.image} alt={event.title} fill className="object-cover" />
-                  <Badge className="absolute top-4 right-4 bg-orange-500 text-white">{event.category}</Badge>
-                </div>
-                <CardContent className="p-6 text-white">
-                  <h3 className="text-xl font-bold mb-3">{event.title}</h3>
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-2 text-sm opacity-90">
-                      <Calendar className="w-4 h-4 text-orange-400" />
-                      {event.date}
-                    </div>
-                    {event.time && (
-                      <div className="flex items-center gap-2 text-sm opacity-90">
-                        <Clock className="w-4 h-4 text-orange-400" />
-                        {event.time}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 text-sm opacity-90">
-                      <MapPin className="w-4 h-4 text-orange-400" />
-                      {event.location}
-                    </div>
+          {upcomingEvents.length === 0 ? (
+            <div className="text-center text-white/70 py-12">
+              <p className="text-xl">No upcoming events at the moment.</p>
+              <p className="mt-2">Check back soon for new events!</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-8">
+              {upcomingEvents.map((event) => (
+                <Card key={event.id} className="bg-white/10 backdrop-blur-sm border-white/20 card-hover">
+                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                    <Image 
+                      src={event.image || '/images/aaasj_header_bg.png'} 
+                      alt={event.title} 
+                      fill 
+                      className="object-cover" 
+                    />
+                    <Badge className="absolute top-4 right-4 bg-orange-500 text-white">
+                      {event.category || 'Event'}
+                    </Badge>
                   </div>
-                  <p className="opacity-90 mb-6 leading-relaxed">{event.description}</p>
-                  {event.link ? (
-                    <Link href={event.link}>
-                      <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white btn-hover">
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Apply Now
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Link href="/contact">
-                      <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white btn-hover">
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Register for Event
-                      </Button>
-                    </Link>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <CardContent className="p-6 text-white">
+                    <h3 className="text-xl font-bold mb-3">{event.title}</h3>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-sm opacity-90">
+                        <Calendar className="w-4 h-4 text-orange-400" />
+                        {event.date}
+                      </div>
+                      {event.time && (
+                        <div className="flex items-center gap-2 text-sm opacity-90">
+                          <Clock className="w-4 h-4 text-orange-400" />
+                          {event.time}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-sm opacity-90">
+                        <MapPin className="w-4 h-4 text-orange-400" />
+                        {event.location || 'Location TBD'}
+                      </div>
+                    </div>
+                    <p className="opacity-90 mb-6 leading-relaxed">{event.description}</p>
+                    {event.link ? (
+                      <Link href={event.link}>
+                        <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white btn-hover">
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          {event.link === '/scholarship' ? 'Apply Now' : 'Learn More'}
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link href="/contact">
+                        <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white btn-hover">
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Register for Event
+                        </Button>
+                      </Link>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -204,43 +163,50 @@ export default function EventsPage() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-12 text-center">
             Past <span className="gradient-text">Events</span>
           </h2>
-          <div className="space-y-10">
-            {years.map((year) => (
-              <div key={year}>
-                <h3 className="text-2xl font-bold text-white mb-6">{year}</h3>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {pastByYear[year].map((event) => (
-                    <Card key={event.id} className="bg-white/10 backdrop-blur-sm border-white/20 card-hover">
-                      <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                        <Image src={event.image} alt={event.title} fill className="object-cover" />
-                        <Badge className="absolute top-4 right-4 bg-blue-500 text-white">{event.category}</Badge>
-                      </div>
-                      <CardContent className="p-6 text-white">
-                        <h3 className="text-lg font-bold mb-2">{event.title}</h3>
-                        <div className="space-y-1 mb-3">
-                          <div className="flex items-center gap-2 text-sm opacity-90">
-                            <Calendar className="w-4 h-4 text-orange-400" />
-                            {event.date}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm opacity-90">
-                            <MapPin className="w-4 h-4 text-orange-400" />
-                            {event.location}
-                          </div>
-                          {event.attendees && (
-                            <div className="flex items-center gap-2 text-sm opacity-90">
-                              <Users className="w-4 h-4 text-orange-400" />
-                              {event.attendees} attendees
-                            </div>
-                          )}
+          {pastEvents.length === 0 ? (
+            <div className="text-center text-white/70 py-12">
+              <p className="text-xl">No past events to display.</p>
+            </div>
+          ) : (
+            <div className="space-y-10">
+              {years.map((year) => (
+                <div key={year}>
+                  <h3 className="text-2xl font-bold text-white mb-6">{year}</h3>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {pastByYear[year].map((event) => (
+                      <Card key={event.id} className="bg-white/10 backdrop-blur-sm border-white/20 card-hover">
+                        <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                          <Image 
+                            src={event.image || '/images/aaasj_header_bg.png'} 
+                            alt={event.title} 
+                            fill 
+                            className="object-cover" 
+                          />
+                          <Badge className="absolute top-4 right-4 bg-blue-500 text-white">
+                            {event.category || 'Event'}
+                          </Badge>
                         </div>
-                        <p className="text-sm opacity-80 leading-relaxed">{event.description}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        <CardContent className="p-6 text-white">
+                          <h3 className="text-lg font-bold mb-2">{event.title}</h3>
+                          <div className="space-y-1 mb-3">
+                            <div className="flex items-center gap-2 text-sm opacity-90">
+                              <Calendar className="w-4 h-4 text-orange-400" />
+                              {event.date}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm opacity-90">
+                              <MapPin className="w-4 h-4 text-orange-400" />
+                              {event.location || 'Location TBD'}
+                            </div>
+                          </div>
+                          <p className="text-sm opacity-80 leading-relaxed">{event.description}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

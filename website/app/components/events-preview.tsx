@@ -10,67 +10,23 @@ import { Badge } from '@/components/ui/badge'
 import { Calendar, MapPin, Users, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-const featuredEvents = [
-  {
-    id: 1,
-    title: "2026 AAASJ Community Service Scholarship Application",
-    date: "Deadline: September 15, 2025",
-    time: "Apply Now", 
-    location: "Online Application",
-    description: "Apply for our community service scholarship! Awards up to $1,000 for Gold level, $500 for Silver, and $300 for Bronze. Open to high school juniors and seniors demonstrating academic excellence and community service.",
-    image: "/images/event_flyer_1.png",
-    category: "Scholarship",
-    status: "upcoming",
-    link: "/scholarship"
-  },
-  {
-    id: 2,
-    title: "Mid-autumn & Wellness Festival",
-    date: "October 4, 2025",
-    time: "11:30 AM - 3:30 PM", 
-    location: "Hung Fa Supermarket Parking Lot",
-    description: "Celebrate Mid-autumn Festival with our community! Traditional foods, wellness activities, cultural performances, and family-friendly entertainment. Rain date: October 5, 2025.",
-    image: "/images/event_flyer_2.png",
-    category: "Festival",
-    status: "upcoming"
-  },
-  {
-    id: 3,
-    title: "5th Annual AAPI Heritage Month Festival",
-    date: "May 18, 2025",
-    time: "12:00 PM - 3:30 PM", 
-    location: "Cherry Hill West High School, 2101 Chapel Ave",
-    description: "Join us for our annual celebration of Asian American and Pacific Islander heritage with cultural performances, food, music, crafts, and community activities. Free admission for the public!",
-    image: "/images/event_flyer_2.png",
-    category: "Festival",
-    status: "upcoming"
-  },
-  {
-    id: 4,
-    title: "Leon Chen Community Service Scholarship Dinner",
-    date: "March 22, 2025",
-    time: "4:00 PM - 6:00 PM",
-    location: "TBD - South Jersey",
-    description: "Annual scholarship dinner honoring community service and supporting Asian American students in South Jersey. Join us for an evening of recognition and celebration.",
-    image: "/images/event_flyer_1.png",
-    category: "Scholarship",
-    status: "upcoming"
-  },
-  {
-    id: 5,
-    title: "Community Service Day 2024",
-    date: "November 12, 2024",
-    location: "Various locations in South Jersey",
-    description: "Volunteers came together to serve local food banks, community centers, and support families in need throughout South Jersey.",
-    image: "/images/aaasj_header_bg.png",
-    category: "Service",
-    status: "completed",
-    attendees: 85
-  }
-]
+type EventItem = {
+  id: string
+  title: string
+  date: string
+  time?: string
+  location?: string
+  description?: string
+  image?: string
+  category?: string
+  status: 'upcoming' | 'past'
+  link?: string
+}
 
 export default function EventsPreview() {
   const [isVisible, setIsVisible] = useState(false)
+  const [events, setEvents] = useState<EventItem[]>([])
+  const [loading, setLoading] = useState(true)
   const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -90,6 +46,28 @@ export default function EventsPreview() {
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch('/api/events')
+        if (!res.ok) throw new Error('Failed to fetch events')
+        const data = await res.json()
+        setEvents(data)
+      } catch (error) {
+        console.error('Error fetching events:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEvents()
+  }, [])
+
+  // Get featured events (upcoming events, limited to 5)
+  const featuredEvents = events
+    .filter(event => event.status === 'upcoming')
+    .slice(0, 5)
+
   return (
     <section ref={sectionRef} className="py-20 px-4">
       <div className="max-w-6xl mx-auto">
@@ -108,70 +86,75 @@ export default function EventsPreview() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {featuredEvents.map((event, index) => (
-            <motion.div
-              key={event.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={isVisible ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.2 + index * 0.1 }}
-            >
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 card-hover h-full">
-                <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                  <Image
-                    src={event.image}
-                    alt={event.title}
-                    fill
-                    className="object-cover"
-                  />
-                  <Badge className={`absolute top-4 right-4 ${
-                    event.status === 'upcoming' ? 'bg-orange-500' : 'bg-blue-500'
-                  } text-white`}>
-                    {event.category}
-                  </Badge>
-                </div>
-                <CardContent className="p-6 text-white flex-1 flex flex-col">
-                  <h3 className="text-lg font-bold mb-3 line-clamp-2">{event.title}</h3>
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-2 text-sm opacity-90">
-                      <Calendar className="w-4 h-4 text-orange-400 flex-shrink-0" />
-                      {event.date} {event.time && `• ${event.time}`}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm opacity-90">
-                      <MapPin className="w-4 h-4 text-orange-400 flex-shrink-0" />
-                      {event.location}
-                    </div>
-                    {event.attendees && (
-                      <div className="flex items-center gap-2 text-sm opacity-90">
-                        <Users className="w-4 h-4 text-orange-400 flex-shrink-0" />
-                        {event.attendees} attended
-                      </div>
-                    )}
-                  </div>
-                  <p className="opacity-80 text-sm leading-relaxed mb-4 flex-1">
-                    {event.description}
-                  </p>
-                  <div className="flex justify-between items-center">
-                    <Badge variant="outline" className={`${
-                      event.status === 'upcoming' 
-                        ? 'border-orange-400/50 text-orange-400' 
-                        : 'border-blue-400/50 text-blue-400'
-                    }`}>
-                      {event.status === 'upcoming' ? 'Upcoming' : 'Completed'}
+        {loading ? (
+          <div className="text-center text-white/70 py-12">
+            <p className="text-xl">Loading events...</p>
+          </div>
+        ) : featuredEvents.length === 0 ? (
+          <div className="text-center text-white/70 py-12">
+            <p className="text-xl">No upcoming events at the moment.</p>
+            <p className="mt-2">Check back soon for new events!</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            {featuredEvents.map((event, index) => (
+              <motion.div
+                key={event.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={isVisible ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.8, delay: 0.2 + index * 0.1 }}
+              >
+                <Card className="bg-white/10 backdrop-blur-sm border-white/20 card-hover h-full">
+                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                    <Image
+                      src={event.image || '/images/aaasj_header_bg.png'}
+                      alt={event.title}
+                      fill
+                      className="object-cover"
+                    />
+                    <Badge className={`absolute top-4 right-4 ${
+                      event.status === 'upcoming' ? 'bg-orange-500' : 'bg-blue-500'
+                    } text-white`}>
+                      {event.category || 'Event'}
                     </Badge>
-                    {event.link && (
-                      <Link href={event.link}>
-                        <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white">
-                          Apply Now
-                        </Button>
-                      </Link>
-                    )}
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+                  <CardContent className="p-6 text-white flex-1 flex flex-col">
+                    <h3 className="text-lg font-bold mb-3 line-clamp-2">{event.title}</h3>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-sm opacity-90">
+                        <Calendar className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                        {event.date} {event.time && `• ${event.time}`}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm opacity-90">
+                        <MapPin className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                        {event.location || 'Location TBD'}
+                      </div>
+                    </div>
+                    <p className="opacity-80 text-sm leading-relaxed mb-4 flex-1">
+                      {event.description}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <Badge variant="outline" className={`${
+                        event.status === 'upcoming' 
+                          ? 'border-orange-400/50 text-orange-400' 
+                          : 'border-blue-400/50 text-blue-400'
+                      }`}>
+                        {event.status === 'upcoming' ? 'Upcoming' : 'Completed'}
+                      </Badge>
+                      {event.link && (
+                        <Link href={event.link}>
+                          <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white">
+                            {event.link === '/scholarship' ? 'Apply Now' : 'Learn More'}
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}

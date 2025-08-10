@@ -1,0 +1,95 @@
+[
+  {
+    "id": "598ced46-9d09-4fcf-8f5c-5819a3278677",
+    "title": "test event Xmas party",
+    "date": "2025-12-25",
+    "location": "Home",
+    "description": "This is a testing event for the xams ",
+    "category": "Team party",
+    "status": "past",
+    "image": "https://lh3.googleusercontent.com/pw/AP1GczMZmwwA0iG_Yoi8HAit6bnKfts2vVffjp1YBgcKw5ifg3zu1Q23YCuVvU1vndv_GVhrg9oS13I5czdThs7KFT136KOgb1nQTlw4lyrGYoQBgAORwqs=w1200-h800-c"
+  },
+  {
+    "id": "static-1",
+    "title": "2025 AAASJ Community Service Scholarship",
+    "date": "2025-09-15",
+    "time": "Apply Now",
+    "location": "Online Application",
+    "description": "Apply for our community service scholarship! Awards up to $1,000 for Gold level, $500 for Silver, and $300 for Bronze. Open to high school juniors and seniors demonstrating academic excellence and community service.",
+    "image": "https://lh3.googleusercontent.com/pw/AP1GczPVc-4mxR3XYUHX7nOesc3wAypFl5ML7kanVD9mwG4g9-DZ4X51Y7wWLKXJLjQZaUvoq-UZPDKZElWpwFNe48XoaY_9qCuccVcTdXYR5WuyHgKi_-w=w1200-h800-c",
+    "category": "Scholarship",
+    "status": "upcoming",
+    "link": "/scholarship"
+  },
+  {
+    "id": "static-2",
+    "title": "Mid-autumn & Wellness Festival",
+    "date": "2025-10-04",
+    "time": "11:30 AM - 3:30 PM",
+    "location": "Hung Fa Supermarket Parking Lot",
+    "description": "Celebrate Mid-autumn Festival with our community! Traditional foods, wellness activities, cultural performances, and family-friendly entertainment. Rain date: October 5, 2025.",
+    "image": "/images/event_flyer_2.png",
+    "category": "Festival",
+    "status": "upcoming"
+  },
+  {
+    "id": "static-3",
+    "title": "5th Annual AAPI Heritage Month Festival",
+    "date": "2025-05-18",
+    "location": "Cherry Hill West High School, 2101 Chapel Ave",
+    "description": "Our annual celebration of Asian American and Pacific Islander heritage with cultural performances, food, music, crafts, and community activities. Free admission for the public!",
+    "image": "/images/event_flyer_2.png",
+    "category": "Festival",
+    "status": "past"
+  },
+  {
+    "id": "static-4",
+    "title": "Leon Chen Community Service Scholarship Dinner",
+    "date": "2025-03-22",
+    "location": "TBD - South Jersey",
+    "description": "Annual scholarship dinner honoring community service and supporting Asian American students in South Jersey. An evening of recognition and celebration.",
+    "image": "/images/event_flyer_1.png",
+    "category": "Scholarship",
+    "status": "past"
+  },
+  {
+    "id": "static-5",
+    "title": "4th Annual AAPI Heritage Month Festival",
+    "date": "2024-05-21",
+    "location": "Cherry Hill West High School",
+    "description": "Successful cultural celebration with over 600 community members attending, featuring traditional performances, food vendors, and cultural displays.",
+    "image": "/images/aaasj_header_bg.png",
+    "category": "Festival",
+    "status": "past"
+  },
+  {
+    "id": "static-6",
+    "title": "Community Service Day",
+    "date": "2024-11-12",
+    "location": "Various locations in South Jersey",
+    "description": "Volunteers came together to serve local food banks, community centers, and support families in need throughout South Jersey.",
+    "image": "/images/aaasj_header_bg.png",
+    "category": "Service",
+    "status": "past"
+  },
+  {
+    "id": "static-7",
+    "title": "Leon Chen Scholarship Award Ceremony",
+    "date": "2024-03-25",
+    "location": "Cherry Hill, NJ",
+    "description": "Annual scholarship award ceremony recognizing outstanding Asian American students for their academic achievements and community service contributions.",
+    "image": "/images/aaasj_logo.png",
+    "category": "Scholarship",
+    "status": "past"
+  },
+  {
+    "id": "static-8",
+    "title": "Community Service Day",
+    "date": "2023-11-12",
+    "location": "Various locations in Cherry Hill",
+    "description": "Volunteers came together to serve local food banks and community centers.",
+    "image": "https://imgs.search.brave.com/nS0QOlg7w0I1TkFcx0c8C85jZbSLzTx4RLcRN-088VM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvMTI3/MjcxNTA1OS9waG90/by9kZWxpdmVyeS1w/ZXJzb24tdXNpbmctZmFjZW1hc2stZGVsaXZlcnMtcGFja2FnZS10by1hLXJlc2lkZW5jZS13b21hbi5qcGc_cz02MTJ4NjEyJnc9MCZrPTIwJmM9LUJuQjd3NGNwbnljWjJoRGxhNnpNOVB3eGNOWmV4cUVUbGZ4eDl2dHg5az0",
+    "category": "Service",
+    "status": "past"
+  }
+]
