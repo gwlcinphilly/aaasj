@@ -91,5 +91,15 @@
     "image": "https://imgs.search.brave.com/nS0QOlg7w0I1TkFcx0c8C85jZbSLzTx4RLcRN-088VM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvMTI3/MjcxNTA1OS9waG90/by9kZWxpdmVyeS1w/ZXJzb24tdXNpbmctZmFjZW1hc2stZGVsaXZlcnMtcGFja2FnZS10by1hLXJlc2lkZW5jZS13b21hbi5qcGc_cz02MTJ4NjEyJnc9MCZrPTIwJmM9LUJuQjd3NGNwbnljWjJoRGxhNnpNOVB3eGNOWmV4cUVUbGZ4eDl2dHg5az0",
     "category": "Service",
     "status": "past"
+  },
+  {
+    "id": "fb2f4259-2cb8-41a7-93d5-820faf06df9a",
+    "title": "Evetn to celerbrate. kegan birtday",
+    "date": "2025-09-05",
+    "location": "Home",
+    "description": "This is a test event",
+    "image": "https://lh3.googleusercontent.com/pw/AP1GczMWDtjYTm8BRycpJWpKBAw1YsZFUwrbdRTkhuQONjZcVHaVhk3vu8ozubqRQL1t3UN0ao7pfm-U8mcAWOK1wq8KaWLirRyq8xUT8R6BtxB9XYnr-WQ=w1200-h800-c",
+    "category": "Party",
+    "status": "upcoming"
   }
 ]
