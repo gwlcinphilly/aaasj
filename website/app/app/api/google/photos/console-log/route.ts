@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server'
-import { logToFile } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,7 +6,9 @@ export async function POST(req: NextRequest) {
     const level = (body?.level || 'info') as 'debug' | 'info' | 'warn' | 'error'
     const message = typeof body?.message === 'string' ? body.message : 'client-log'
     const data = body?.data
-    await logToFile(level, message, data)
+    
+    console.log(`[CLIENT ${level.toUpperCase()}] ${message}`, data ? JSON.stringify(data, null, 2) : '')
+    
     return new Response(null, { status: 204 })
   } catch (e: any) {
     return new Response(e?.message || 'Invalid JSON', { status: 400 })

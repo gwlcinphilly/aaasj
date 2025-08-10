@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
   const body = debugEnabled ? { albums, debug } : { albums }
   if (debugEnabled) {
     console.log('[Photos Albums Debug]', debug)
-    await logToFile('info', 'Photos Albums Debug', debug)
+    console.log('[Photos Albums Debug JSON]', JSON.stringify(debug, null, 2))
   }
   return Response.json(body)
 }

@@ -4,8 +4,12 @@ import nodemailer from 'nodemailer'
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
+  console.log('=== SCHOLARSHIP SUBMISSION START ===')
+  console.log('Timestamp:', new Date().toISOString())
+  
   try {
     const formData = await request.formData()
+    console.log('Form data received successfully')
 
     const studentName = String(formData.get('studentName') || '')
     const email = String(formData.get('email') || '')
@@ -22,6 +26,18 @@ export async function POST(request: NextRequest) {
     const question2 = String(formData.get('question2') || '')
     const question3 = String(formData.get('question3') || '')
 
+    console.log('Form data extracted:')
+    console.log('- Student Name:', studentName)
+    console.log('- Email:', email)
+    console.log('- Phone:', phone)
+    console.log('- Address:', `${address}, ${city}, ${state} ${zip}`)
+    console.log('- Academic Awards length:', academicAwards.length)
+    console.log('- Volunteer Work length:', volunteerWork.length)
+    console.log('- Groups/Clubs length:', groupsClubs.length)
+    console.log('- Question 1 length:', question1.length)
+    console.log('- Question 2 length:', question2.length)
+    console.log('- Question 3 length:', question3.length)
+
     // Assemble attachments
     const attachments: Array<{ filename: string; content: Buffer; contentType?: string }> = []
 
@@ -30,15 +46,25 @@ export async function POST(request: NextRequest) {
     if (generatedPdf && typeof generatedPdf.arrayBuffer === 'function') {
       const buf = Buffer.from(await generatedPdf.arrayBuffer())
       attachments.push({ filename: (generatedPdf as any).name || 'application.pdf', content: buf, contentType: generatedPdf.type || 'application/pdf' })
+      console.log('Generated PDF attached:', (generatedPdf as any).name || 'application.pdf', 'Size:', buf.length, 'bytes')
+    } else {
+      console.log('No generated PDF found or invalid format')
     }
 
     // User uploads (multiple 'files')
     const files = formData.getAll('files') as unknown as File[]
+    console.log('User files found:', files.length)
     for (const f of files) {
-      if (!f || typeof (f as any).arrayBuffer !== 'function') continue
+      if (!f || typeof (f as any).arrayBuffer !== 'function') {
+        console.log('Skipping invalid file:', f)
+        continue
+      }
       const buf = Buffer.from(await f.arrayBuffer())
       attachments.push({ filename: (f as any).name || 'attachment', content: buf, contentType: f.type || undefined })
+      console.log('File attached:', (f as any).name || 'attachment', 'Size:', buf.length, 'bytes', 'Type:', f.type)
     }
+
+    console.log('Total attachments:', attachments.length)
 
     const textBody = `2026 AAASJ Community Service Scholarship Application\n\n` +
 `STUDENT PROFILE:\n` +
@@ -57,16 +83,24 @@ export async function POST(request: NextRequest) {
 `2. What have you done to help/address these issues/needs?\n${question2}\n\n` +
 `3. Please share any past community services, contributions, and achievements you have made to the Asian American community in South Jersey.\n${question3}\n\n`
 
+    console.log('Email body prepared, length:', textBody.length, 'characters')
+
     const SMTP_HOST = process.env.SMTP_HOST
     const SMTP_PORT = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : undefined
     const SMTP_USER = process.env.SMTP_USER
     const SMTP_PASS = process.env.SMTP_PASS
     const SMTP_SECURE = process.env.SMTP_SECURE === 'true'
 
+    console.log('SMTP Configuration Check:')
+    console.log('- SMTP_HOST:', SMTP_HOST ? 'SET' : 'MISSING')
+    console.log('- SMTP_PORT:', SMTP_PORT || 'MISSING')
+    console.log('- SMTP_USER:', SMTP_USER ? 'SET' : 'MISSING')
+    console.log('- SMTP_PASS:', SMTP_PASS ? 'SET' : 'MISSING')
+    console.log('- SMTP_SECURE:', SMTP_SECURE)
+
     // Check if SMTP is configured
     if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) {
-      // If SMTP not configured, just return success but log the application
-      console.log('=== SCHOLARSHIP APPLICATION (SMTP NOT CONFIGURED) ===')
+      console.log('=== SMTP NOT CONFIGURED - LOGGING APPLICATION ONLY ===')
       console.log('Student:', studentName)
       console.log('Email:', email)
       console.log('Phone:', phone)
@@ -87,6 +121,7 @@ export async function POST(request: NextRequest) {
       }), { status: 200 })
     }
 
+    console.log('SMTP configured, creating transporter...')
     const transporter = nodemailer.createTransport({
       host: SMTP_HOST,
       port: SMTP_PORT,
@@ -94,9 +129,24 @@ export async function POST(request: NextRequest) {
       auth: { user: SMTP_USER, pass: SMTP_PASS },
     })
 
+    console.log('Transporter created, verifying connection...')
+    try {
+      await transporter.verify()
+      console.log('SMTP connection verified successfully')
+    } catch (verifyError) {
+      console.error('SMTP verification failed:', verifyError)
+      throw new Error(`SMTP verification failed: ${verifyError}`)
+    }
+
     const emailTo = process.env.SCHOLARSHIP_EMAIL_TO || 'scholarship@aaa-sj.org'
     const emailFrom = process.env.SCHOLARSHIP_EMAIL_FROM || SMTP_USER
 
+    console.log('Email configuration:')
+    console.log('- To:', emailTo)
+    console.log('- From:', emailFrom)
+    console.log('- Reply-To:', email || 'not set')
+
+    console.log('Sending email...')
     const info = await transporter.sendMail({
       from: `"${studentName}" <${emailFrom}>`,
       to: emailTo,
@@ -106,9 +156,23 @@ export async function POST(request: NextRequest) {
       replyTo: email || undefined,
     })
 
+    console.log('Email sent successfully!')
+    console.log('- Message ID:', info.messageId)
+    console.log('- Response:', info.response)
+    console.log('- Accepted recipients:', info.accepted)
+    console.log('- Rejected recipients:', info.rejected)
+    console.log('- Pending recipients:', info.pending)
+
+    console.log('=== SCHOLARSHIP SUBMISSION SUCCESS ===')
     return new Response(JSON.stringify({ ok: true, messageId: info.messageId }), { status: 200 })
   } catch (error: any) {
-    console.error(error)
+    console.error('=== SCHOLARSHIP SUBMISSION ERROR ===')
+    console.error('Error type:', error.constructor.name)
+    console.error('Error message:', error?.message)
+    console.error('Error stack:', error?.stack)
+    console.error('Full error object:', JSON.stringify(error, null, 2))
+    console.error('=== END ERROR LOG ===')
+    
     return new Response(JSON.stringify({ message: error?.message || 'Internal Server Error' }), { status: 500 })
   }
 }

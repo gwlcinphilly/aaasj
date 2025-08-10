@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Award, FileText, Users, DollarSign, Mail, Clock, X } from 'lucide-react'
+import { Calendar, Award, FileText, Users, DollarSign, Mail, Clock, X, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { jsPDF } from 'jspdf'
 
@@ -36,6 +36,8 @@ export default function ScholarshipForm() {
   })
 
   const [uploads, setUploads] = useState<File[]>([])
+  const [isApplicationSaved, setIsApplicationSaved] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Application deadline (local time)
   const applicationDeadline = useMemo(() => new Date('2025-09-15T23:59:59'), [])
@@ -99,34 +101,26 @@ export default function ScholarshipForm() {
       'image/jpeg',
       'image/png',
       'image/gif',
-      'image/webp',
-      'image/heic',
+      'image/webp'
     ])
 
-    const maxFileSizeMb = 10
-    const maxTotalSizeMb = 4
+    const maxSize = 25 * 1024 * 1024 // 25MB
+    let totalSize = uploads.reduce((sum, file) => sum + file.size, 0)
 
-    const nextUploads: File[] = [...uploads]
-
-    for (const file of incoming) {
+    const validFiles = incoming.filter(file => {
       if (!allowedTypes.has(file.type)) {
-        toast.error(`Unsupported file type: ${file.name}`)
-        continue
+        toast.error(`${file.name} is not a supported file type`)
+        return false
       }
-      if (file.size > maxFileSizeMb * 1024 * 1024) {
-        toast.error(`File too large (> ${maxFileSizeMb}MB): ${file.name}`)
-        continue
+      if (totalSize + file.size > maxSize) {
+        toast.error(`${file.name} would exceed the 25MB total size limit`)
+        return false
       }
-      nextUploads.push(file)
-    }
+      totalSize += file.size
+      return true
+    })
 
-    const totalSize = nextUploads.reduce((sum, f) => sum + f.size, 0)
-    if (totalSize > maxTotalSizeMb * 1024 * 1024) {
-      toast.error(`Total attachments exceed ${maxTotalSizeMb}MB. Please remove some files.`)
-      return
-    }
-
-    setUploads(nextUploads)
+    setUploads(prev => [...prev, ...validFiles])
   }
 
   const removeUploadAt = (idx: number) => {
@@ -134,19 +128,18 @@ export default function ScholarshipForm() {
   }
 
   function generateApplicationPdf(): { blob: Blob; filename: string } {
-    const doc = new jsPDF({ unit: 'pt' })
-
+    const doc = new jsPDF()
+    const marginX = 20
     const pageWidth = doc.internal.pageSize.getWidth()
-    const pageHeight = doc.internal.pageSize.getHeight()
-    const marginX = 48
-    const marginY = 48
-    let cursorY = marginY
+    const contentWidth = pageWidth - 2 * marginX
+    let currentY = 20
 
     const ensurePage = (additionalHeight = 0) => {
-      if (cursorY + additionalHeight > pageHeight - marginY) {
+      if (currentY + additionalHeight > doc.internal.pageSize.getHeight() - 20) {
         doc.addPage()
-        cursorY = marginY
+        currentY = 20
       }
+      return currentY
     }
 
     const writeLine = (
@@ -156,11 +149,12 @@ export default function ScholarshipForm() {
       fontSize = 11,
       x = marginX
     ) => {
-      doc.setFont('helvetica', fontStyle)
+      const y = ensurePage(lineHeight)
       doc.setFontSize(fontSize)
-      ensurePage(lineHeight)
-      doc.text(text, x, cursorY)
-      cursorY += lineHeight
+      doc.setFont('helvetica', fontStyle)
+      doc.text(text, x, y)
+      currentY = y + lineHeight
+      return currentY
     }
 
     const writeWrapped = (
@@ -171,91 +165,97 @@ export default function ScholarshipForm() {
       fontSize = 11,
       x = marginX
     ) => {
-      const lines = doc.splitTextToSize(text || '-', wrapWidth)
-      for (const line of lines) {
-        writeLine(line, lineHeight, fontStyle, fontSize, x)
-      }
+      const y = ensurePage()
+      doc.setFontSize(fontSize)
+      doc.setFont('helvetica', fontStyle)
+      const lines = doc.splitTextToSize(text, wrapWidth)
+      const totalHeight = lines.length * lineHeight
+      ensurePage(totalHeight)
+      doc.text(lines, x, y)
+      currentY = y + totalHeight
+      return currentY
     }
 
     const addHeading = (text: string) => {
-      writeLine(text, 24, 'bold', 18)
+      return writeLine(text, 20, 'bold', 16)
     }
 
     const addSubheading = (text: string) => {
-      writeLine(text, 18, 'bold', 12)
+      return writeLine(text, 16, 'bold', 12)
     }
 
     const addParagraph = (text: string) => {
-      writeWrapped(text, pageWidth - marginX * 2, 14, 'normal', 11)
-      cursorY += 2
+      return writeWrapped(text, contentWidth, 12, 'normal', 11)
     }
 
     const addKeyValue = (key: string, value: string) => {
-      // Write key label
+      const y = ensurePage(12)
+      doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(11)
-      ensurePage(14)
-      doc.text(`${key}:`, marginX, cursorY)
-
-      // Write value, wrapped to the remaining width
-      const valueX = marginX + 80
-      const wrapped = doc.splitTextToSize(value || '-', pageWidth - valueX - marginX)
+      doc.text(key + ':', marginX, y)
       doc.setFont('helvetica', 'normal')
-      doc.setFontSize(11)
-      for (const line of wrapped) {
-        ensurePage(14)
-        doc.text(line, valueX, cursorY)
-        cursorY += 14
-      }
+      const valueLines = doc.splitTextToSize(value, contentWidth - 50)
+      doc.text(valueLines, marginX + 50, y)
+      currentY = y + Math.max(12, valueLines.length * 12)
+      return currentY
     }
 
-    // Header
+    // Title
     addHeading('2026 AAASJ Community Service Scholarship Application')
-    writeLine(`Generated: ${new Date().toLocaleString()}`, 16, 'normal', 10)
+    writeLine('', 10)
 
     // Student Profile
-    addSubheading('Student Profile')
+    addSubheading('STUDENT PROFILE')
+    writeLine('', 8)
     addKeyValue('Student Name', formData.studentName)
-    addKeyValue('Email', formData.email)
-    addKeyValue('Phone', formData.phone)
-    addKeyValue('Address', `${formData.address || ''}`)
+    addKeyValue('Address', formData.address)
     addKeyValue('City', formData.city)
     addKeyValue('State', formData.state)
     addKeyValue('Zip', formData.zip)
-    cursorY += 8
+    addKeyValue('Email', formData.email)
+    addKeyValue('Phone', formData.phone)
+    writeLine('', 8)
 
-    // Academics & Activities
-    addSubheading('Academic Awards / Achievements')
-    addParagraph(formData.academicAwards)
+    // Academic Awards
+    addSubheading('Academic Awards/Achievements')
+    writeLine('', 8)
+    addParagraph(formData.academicAwards || 'None provided')
+    writeLine('', 8)
 
-    addSubheading('Volunteer Work / Community Service')
-    addParagraph(formData.volunteerWork)
+    // Volunteer Work
+    addSubheading('Volunteer Work/Community Service')
+    writeLine('', 8)
+    addParagraph(formData.volunteerWork || 'None provided')
+    writeLine('', 8)
 
-    addSubheading('Groups / Clubs / Organizations')
-    addParagraph(formData.groupsClubs)
+    // Groups/Clubs
+    addSubheading('Groups/Clubs/Organizations')
+    writeLine('', 8)
+    addParagraph(formData.groupsClubs || 'None provided')
+    writeLine('', 8)
 
     // Essay Questions
-    addSubheading('Essay Questions')
-    addParagraph('1) What do you believe are the most pressing issues or needs in the Asian American community in South Jersey?')
-    addParagraph(formData.question1)
+    addSubheading('ESSAY QUESTIONS')
+    writeLine('', 8)
 
-    addParagraph('2) What have you done to help/address these issues/needs?')
-    addParagraph(formData.question2)
+    addSubheading('1. What do you believe are the most pressing issues or needs in the Asian American community in South Jersey?')
+    writeLine('', 8)
+    addParagraph(formData.question1 || 'No response provided')
+    writeLine('', 8)
 
-    addParagraph('3) Please share any past community services, contributions, and achievements you have made to the Asian American community in South Jersey.')
-    addParagraph(formData.question3)
+    addSubheading('2. What have you done to help/address these issues/needs?')
+    writeLine('', 8)
+    addParagraph(formData.question2 || 'No response provided')
+    writeLine('', 8)
 
-    // Footer note
-    writeLine('', 6)
-    writeWrapped(
-      'Note: Please attach your most recent high school transcript and this PDF when emailing your application to scholarship@aaa-sj.org.',
-      pageWidth - marginX * 2,
-      12,
-      'italic',
-      10
-    )
+    addSubheading('3. Please share any past community services, contributions, and achievements you have made to the Asian American community in South Jersey.')
+    writeLine('', 8)
+    addParagraph(formData.question3 || 'No response provided')
 
-    const filename = `AAASJ_Scholarship_Application_${formData.studentName || 'Applicant'}.pdf`
+    // Generate filename with specific format
+    const sanitizedName = formData.studentName.replace(/\s+/g, '_')
+    const sanitizedEmail = formData.email.replace(/[@.]/g, '_')
+    const filename = `2026_scholarship_${sanitizedName}_${sanitizedEmail}.pdf`
 
     // Create a blob for server upload only (no browser download)
     const blob = doc.output('blob')
@@ -263,9 +263,7 @@ export default function ScholarshipForm() {
     return { blob, filename }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+  const handleSaveApplication = async () => {
     // Basic validation
     if (!formData.studentName || !formData.email || !formData.phone) {
       toast.error('Please fill in all required fields')
@@ -283,19 +281,50 @@ export default function ScholarshipForm() {
       return
     }
 
-    // Build server payload
+    // Generate PDF and add to attachments
     const { blob: pdfBlob, filename: pdfFilename } = generateApplicationPdf()
+    
+    // Create a File object from the blob
+    const pdfFile = new File([pdfBlob], pdfFilename, { type: 'application/pdf' })
+    
+    // Add to uploads if not already present
+    const existingPdfIndex = uploads.findIndex(file => file.name === pdfFilename)
+    if (existingPdfIndex === -1) {
+      setUploads(prev => [pdfFile, ...prev])
+    } else {
+      // Replace existing PDF
+      setUploads(prev => {
+        const newUploads = [...prev]
+        newUploads[existingPdfIndex] = pdfFile
+        return newUploads
+      })
+    }
 
-    const formDataToSend = new FormData()
-    Object.entries(formData).forEach(([key, value]) => {
-      formDataToSend.append(key, value)
-    })
-    // Attach generated PDF
-    formDataToSend.append('generatedPdf', pdfBlob, pdfFilename)
-    // Attach uploads
-    uploads.forEach((file) => formDataToSend.append('files', file, file.name))
+    setIsApplicationSaved(true)
+    toast.success('Application saved! Your generated PDF has been added to attachments.')
+  }
+
+  const handleSubmitEmail = async () => {
+    if (!isApplicationSaved) {
+      toast.error('Please save your application first')
+      return
+    }
+
+    setIsSubmitting(true)
 
     try {
+      // Build server payload
+      const { blob: pdfBlob, filename: pdfFilename } = generateApplicationPdf()
+
+      const formDataToSend = new FormData()
+      Object.entries(formData).forEach(([key, value]) => {
+        formDataToSend.append(key, value)
+      })
+      // Attach generated PDF
+      formDataToSend.append('generatedPdf', pdfBlob, pdfFilename)
+      // Attach uploads
+      uploads.forEach((file) => formDataToSend.append('files', file, file.name))
+
       const res = await fetch('/api/scholarship/submit', {
         method: 'POST',
         body: formDataToSend,
@@ -310,6 +339,8 @@ export default function ScholarshipForm() {
     } catch (error: any) {
       console.error(error)
       toast.error(error?.message || 'Could not submit application. Please try again later.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -357,201 +388,159 @@ export default function ScholarshipForm() {
           )}
         </div>
 
-        {/* Award Information */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <Card className="bg-yellow-500/20 backdrop-blur-sm border-yellow-400/30">
-            <CardContent className="p-6 text-center">
-              <Award className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Gold Award</h3>
-              <p className="text-yellow-400 text-2xl font-bold mb-1">$1,000</p>
-              <p className="text-white/80 text-sm">1 recipient</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gray-400/20 backdrop-blur-sm border-gray-300/30">
-            <CardContent className="p-6 text-center">
-              <Award className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Silver Awards</h3>
-              <p className="text-gray-300 text-2xl font-bold mb-1">$500</p>
-              <p className="text-white/80 text-sm">2 recipients</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-amber-600/20 backdrop-blur-sm border-amber-500/30">
-            <CardContent className="p-6 text-center">
-              <Award className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Bronze Awards</h3>
-              <p className="text-amber-500 text-2xl font-bold mb-1">$300</p>
-              <p className="text-white/80 text-sm">3 recipients</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Requirements */}
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-8">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <FileText className="w-5 h-5 text-orange-400" />
-              Requirements & Criteria
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-white/90 space-y-4">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-orange-400 mb-2">Eligibility:</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>Current high school junior or senior</li>
-                  <li>Must attend awards ceremony (March 2026)</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold text-orange-400 mb-2">Evaluation Based On:</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>Academic achievements</li>
-                  <li>Extracurricular activities</li>
-                  <li>Community service & civic engagement</li>
-                  <li>Contributions to AAPI community in South Jersey</li>
-                </ul>
-              </div>
-            </div>
-            <div className="bg-orange-500/20 rounded-lg p-4 mt-4">
-              <p className="text-sm text-center text-white">
-                <Mail className="w-4 h-4 inline mr-2" />
-                Submit completed application to: <strong>scholarship@aaa-sj.org</strong>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Application Form */}
         <Card className="bg-white/10 backdrop-blur-sm border-white/20">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-orange-400" />
-              Student Profile & Application
+            <CardTitle className="text-white text-2xl flex items-center gap-2">
+              <Award className="w-6 h-6" />
+              Application Form
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="space-y-6">
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveApplication(); }}>
               {/* Personal Information */}
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="studentName" className="text-white">Student Name *</Label>
+                  <Label htmlFor="studentName" className="text-white block mb-2">
+                    Student Name <span className="text-red-400">*</span>
+                  </Label>
                   <Input
                     id="studentName"
                     value={formData.studentName}
                     onChange={(e) => handleInputChange('studentName', e.target.value)}
                     className="bg-white/10 border-white/20 text-white placeholder-white/50"
+                    placeholder="Enter your full name"
                     required
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="email" className="text-white">Email Address *</Label>
+                  <Label htmlFor="email" className="text-white block mb-2">
+                    Email Address <span className="text-red-400">*</span>
+                  </Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     className="bg-white/10 border-white/20 text-white placeholder-white/50"
+                    placeholder="your.email@example.com"
                     required
                   />
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="address" className="text-white">Address</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white placeholder-white/50"
-                />
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="city" className="text-white">City</Label>
+                  <Label htmlFor="phone" className="text-white block mb-2">
+                    Phone Number <span className="text-red-400">*</span>
+                  </Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    className="bg-white/10 border-white/20 text-white placeholder-white/50"
+                    placeholder="(555) 123-4567"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="address" className="text-white block mb-2">
+                    Street Address
+                  </Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    className="bg-white/10 border-white/20 text-white placeholder-white/50"
+                    placeholder="123 Main Street"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="city" className="text-white block mb-2">
+                    City
+                  </Label>
                   <Input
                     id="city"
                     value={formData.city}
                     onChange={(e) => handleInputChange('city', e.target.value)}
                     className="bg-white/10 border-white/20 text-white placeholder-white/50"
+                    placeholder="City"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="state" className="text-white">State</Label>
-                  <Input
-                    id="state"
-                    value={formData.state}
-                    onChange={(e) => handleInputChange('state', e.target.value)}
-                    placeholder="NJ"
-                    className="bg-white/10 border-white/20 text-white placeholder-white/50"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="zip" className="text-white">Zip Code</Label>
-                  <Input
-                    id="zip"
-                    value={formData.zip}
-                    onChange={(e) => handleInputChange('zip', e.target.value)}
-                    className="bg-white/10 border-white/20 text-white placeholder-white/50"
-                  />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="state" className="text-white block mb-2">
+                      State
+                    </Label>
+                    <Input
+                      id="state"
+                      value={formData.state}
+                      onChange={(e) => handleInputChange('state', e.target.value)}
+                      className="bg-white/10 border-white/20 text-white placeholder-white/50"
+                      placeholder="NJ"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="zip" className="text-white block mb-2">
+                      ZIP Code
+                    </Label>
+                    <Input
+                      id="zip"
+                      value={formData.zip}
+                      onChange={(e) => handleInputChange('zip', e.target.value)}
+                      className="bg-white/10 border-white/20 text-white placeholder-white/50"
+                      placeholder="08000"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="phone" className="text-white">Cell Phone *</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="(___) ___-____"
-                  className="bg-white/10 border-white/20 text-white placeholder-white/50"
-                  required
-                />
-              </div>
-
-              {/* Academic & Activities Information */}
+              {/* Academic & Activities */}
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="academicAwards" className="text-white">Academic Awards or Achievements</Label>
+                  <Label htmlFor="academicAwards" className="text-white block mb-2">
+                    Academic Awards/Achievements
+                  </Label>
                   <Textarea
                     id="academicAwards"
                     value={formData.academicAwards}
                     onChange={(e) => handleInputChange('academicAwards', e.target.value)}
                     className="bg-white/10 border-white/20 text-white placeholder-white/50 min-h-[100px]"
-                    placeholder="List any academic honors, awards, achievements..."
+                    placeholder="List any academic awards, honors, or achievements..."
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="volunteerWork" className="text-white">Volunteer Work or Community Service Projects</Label>
+                  <Label htmlFor="volunteerWork" className="text-white block mb-2">
+                    Volunteer Work/Community Service
+                  </Label>
                   <Textarea
                     id="volunteerWork"
                     value={formData.volunteerWork}
                     onChange={(e) => handleInputChange('volunteerWork', e.target.value)}
                     className="bg-white/10 border-white/20 text-white placeholder-white/50 min-h-[100px]"
-                    placeholder="Describe your volunteer and community service experience..."
+                    placeholder="Describe your volunteer work and community service activities..."
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="groupsClubs" className="text-white">Groups, Clubs, or Organizations</Label>
+                  <Label htmlFor="groupsClubs" className="text-white block mb-2">
+                    Groups/Clubs/Organizations
+                  </Label>
                   <Textarea
                     id="groupsClubs"
                     value={formData.groupsClubs}
                     onChange={(e) => handleInputChange('groupsClubs', e.target.value)}
                     className="bg-white/10 border-white/20 text-white placeholder-white/50 min-h-[100px]"
-                    placeholder="List organizations you belong to and any leadership positions..."
+                    placeholder="List any groups, clubs, or organizations you're involved with..."
                   />
                 </div>
               </div>
 
               {/* Essay Questions */}
-              <div className="space-y-6 mt-8">
-                <h3 className="text-xl font-bold text-white border-b border-white/20 pb-2">Essay Questions</h3>
-                
+              <div className="space-y-6">
                 <div>
                   <Label htmlFor="question1" className="text-white block mb-2">
                     1. What do you believe are the most pressing issues or needs in the Asian American community in South Jersey?
@@ -638,16 +627,35 @@ export default function ScholarshipForm() {
                 </CardContent>
               </Card>
 
-              {/* Submit Button */}
+              {/* Step 1: Save Application Button */}
               <Button 
                 type="submit" 
                 disabled={isPastDeadline}
                 className={`w-full text-white py-4 text-lg font-semibold btn-hover ${isPastDeadline ? 'bg-gray-500 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-600'}`}
               >
-                <Mail className="w-5 h-5 mr-2" />
-                {isPastDeadline ? 'Applications Closed' : 'Submit Application via Email'}
+                <FileText className="w-5 h-5 mr-2" />
+                {isPastDeadline ? 'Applications Closed' : 'Save Application'}
               </Button>
             </form>
+
+            {/* Step 2: Submit Email Button (only shown after saving) */}
+            {isApplicationSaved && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-green-400 bg-green-500/20 p-3 rounded">
+                  <Check className="w-5 h-5" />
+                  <span>Application saved! Your generated PDF has been added to attachments.</span>
+                </div>
+                
+                <Button 
+                  onClick={handleSubmitEmail}
+                  disabled={isPastDeadline || isSubmitting}
+                  className={`w-full text-white py-4 text-lg font-semibold btn-hover ${isPastDeadline || isSubmitting ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
+                >
+                  <Mail className="w-5 h-5 mr-2" />
+                  {isSubmitting ? 'Sending...' : 'Submit Application via Email'}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
