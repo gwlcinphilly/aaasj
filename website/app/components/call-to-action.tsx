@@ -71,7 +71,7 @@ export default function CallToAction() {
                   {/* Image Section */}
                   <div className="relative h-64 md:h-full overflow-hidden">
                     <Image
-                      src="/images/aaasj_logo.png"
+                      src="/pictures/aaasj_logo.png"
                       alt="AAASJ Scholarship"
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"

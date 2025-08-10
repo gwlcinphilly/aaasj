@@ -10,7 +10,7 @@ export const siteUpcomingEvents: EventItem[] = [
     location: 'Online Application',
     description:
       'Apply for our community service scholarship! Awards up to $1,000 for Gold level, $500 for Silver, and $300 for Bronze. Open to high school juniors and seniors demonstrating academic excellence and community service.',
-    image: '/images/event_flyer_1.png',
+    image: 'https://lh3.googleusercontent.com/pw/AP1GczOFR4CNs8OEtn-OufG9heV5tMCrVmOlIA1iRqmiCjiEYOGVAfZe8pK0NiOu7M5jzhJEVzDF2LZZQlqJpAbz4KVGy5IuuuPs9ktM3xwMPu6WV_qO0iw=w1200-h800-c',
     category: 'Scholarship',
     status: 'upcoming',
     link: '/scholarship',
@@ -23,7 +23,7 @@ export const siteUpcomingEvents: EventItem[] = [
     location: 'Hung Fa Supermarket Parking Lot',
     description:
       'Celebrate Mid-autumn Festival with our community! Traditional foods, wellness activities, cultural performances, and family-friendly entertainment. Rain date: October 5, 2025.',
-    image: '/images/event_flyer_2.png',
+    image: 'https://lh3.googleusercontent.com/pw/AP1GczMG18JZUaRiCRdd_RbTaQ__HgavYKKsoO-R_LR7ApJ6YqrNu1nAlvADNGU7OTCPKqLuqbrU6i2xf3QEMVCGIZP5a7hoo52C0QCTdoNVAwiBJXkkeh4=w1200-h800-c',
     category: 'Festival',
     status: 'upcoming',
   },
@@ -37,7 +37,7 @@ export const sitePastEvents: EventItem[] = [
     location: 'Cherry Hill West High School, 2101 Chapel Ave',
     description:
       'Our annual celebration of Asian American and Pacific Islander heritage with cultural performances, food, music, crafts, and community activities. Free admission for the public!',
-    image: '/images/event_flyer_2.png',
+    image: 'https://lh3.googleusercontent.com/pw/AP1GczPdtMEAYmDkBCokjd9anjC6dbIIUKzLvg2_8vJlKLr9ynpImQ27FGFrjTVSMf2odXN4DHUA6Zpgg9ksUE1giUT9hevGxvrl77uJi1oD-9TPVG-7Dps=w1200-h800-c',
     category: 'Festival',
     status: 'past',
   },
@@ -48,7 +48,7 @@ export const sitePastEvents: EventItem[] = [
     location: 'TBD - South Jersey',
     description:
       'Annual scholarship dinner honoring community service and supporting Asian American students in South Jersey. An evening of recognition and celebration.',
-    image: '/images/event_flyer_1.png',
+    image: 'https://lh3.googleusercontent.com/pw/AP1GczOFR4CNs8OEtn-OufG9heV5tMCrVmOlIA1iRqmiCjiEYOGVAfZe8pK0NiOu7M5jzhJEVzDF2LZZQlqJpAbz4KVGy5IuuuPs9ktM3xwMPu6WV_qO0iw=w1200-h800-c',
     category: 'Scholarship',
     status: 'past',
   },
@@ -59,7 +59,7 @@ export const sitePastEvents: EventItem[] = [
     location: 'Cherry Hill West High School',
     description:
       'Successful cultural celebration with over 600 community members attending, featuring traditional performances, food vendors, and cultural displays.',
-    image: '/images/aaasj_header_bg.png',
+    image: '/pictures/aaasj_header_bg.png',
     category: 'Festival',
     status: 'past',
   },
@@ -70,7 +70,7 @@ export const sitePastEvents: EventItem[] = [
     location: 'Various locations in South Jersey',
     description:
       'Volunteers came together to serve local food banks, community centers, and support families in need throughout South Jersey.',
-    image: '/images/aaasj_header_bg.png',
+    image: '/pictures/aaasj_header_bg.png',
     category: 'Service',
     status: 'past',
   },
@@ -81,7 +81,7 @@ export const sitePastEvents: EventItem[] = [
     location: 'Cherry Hill, NJ',
     description:
       'Annual scholarship award ceremony recognizing outstanding Asian American students for their academic achievements and community service contributions.',
-    image: '/images/aaasj_logo.png',
+    image: '/pictures/aaasj_logo.png',
     category: 'Scholarship',
     status: 'past',
   },

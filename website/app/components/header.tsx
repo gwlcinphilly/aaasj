@@ -47,7 +47,7 @@ export default function Header() {
           <Link href="/" className="flex items-center space-x-3">
             <div className="w-12 h-12 relative">
               <Image
-                src="/images/aaasj_logo.png"
+                src="/pictures/aaasj_logo.png"
                 alt="AAASJ Logo"
                 fill
                 className="object-contain"
@@ -72,7 +72,7 @@ export default function Header() {
           </nav>
 
           {/* Right Controls */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-6">
             <Link href="/events">
               <Button className="bg-orange-500 hover:bg-orange-600 text-white btn-hover">
                 Coming Events

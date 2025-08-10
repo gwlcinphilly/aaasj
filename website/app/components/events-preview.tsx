@@ -107,7 +107,7 @@ export default function EventsPreview() {
                 <Card className="bg-white/10 backdrop-blur-sm border-white/20 card-hover h-full">
                   <div className="aspect-video relative overflow-hidden rounded-t-lg">
                     <Image
-                      src={event.image || '/images/aaasj_header_bg.png'}
+                      src={event.image || '/pictures/aaasj_header_bg.png'}
                       alt={event.title}
                       fill
                       className="object-cover"
