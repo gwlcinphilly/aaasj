@@ -133,6 +133,7 @@ providers.push(
 
 export const authOptions: NextAuthOptions = {
   providers,
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || 'your-fallback-secret-key-change-in-production',
   session: { strategy: 'jwt' },
   callbacks: {
     async signIn({ profile, account }) {
