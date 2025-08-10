@@ -46,8 +46,8 @@ export default function BoardPage() {
     <div className="min-h-screen pt-20 px-4">
       <div className="max-w-4xl mx-auto py-12">
         <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Board Members</h1>
-          <p className="text-white/90 text-lg">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 break-words">Board Members</h1>
+          <p className="text-white/90 text-base md:text-lg break-words">
             Meet the dedicated leaders of the Asian American Alliance in South Jersey.
           </p>
         </div>
@@ -56,10 +56,10 @@ export default function BoardPage() {
           {board.map((section) => (
             <Card key={section.role} className="bg-white/10 backdrop-blur-sm border-white/20">
               <CardContent className="p-6 text-white">
-                <h2 className="text-xl font-bold mb-3">{section.role}</h2>
+                <h2 className="text-lg md:text-xl font-bold mb-3 break-words">{section.role}</h2>
                 <ul className="list-disc list-inside space-y-1">
                   {section.members.map((m) => (
-                    <li key={`${section.role}-${m.name}`}>
+                    <li key={`${section.role}-${m.name}`} className="break-words">
                       <span className="font-semibold">{m.name}</span>
                       {m.note ? <span className="text-white/80"> ({m.note})</span> : null}
                     </li>

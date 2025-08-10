@@ -16,10 +16,10 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="relative py-20 px-4 text-center text-white">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-6 break-words">
             About <span className="gradient-text">AAASJ</span>
           </h1>
-          <p className="text-xl md:text-2xl mb-8 opacity-90">
+          <p className="text-lg md:text-xl lg:text-2xl mb-8 opacity-90 break-words">
             Representing, uniting, and amplifying Asian American voices in South Jersey since 2019
           </p>
         </div>
@@ -30,25 +30,25 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="text-white">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 flex items-center gap-3">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6 flex items-center gap-3 break-words">
                 <Target className="w-8 h-8 text-orange-400" />
                 Our Mission
               </h2>
-              <p className="text-lg mb-6 opacity-90 leading-relaxed">
+              <p className="text-base md:text-lg mb-6 opacity-90 leading-relaxed break-words">
                 To represent and safeguard the interests of Asian Americans in the South Jersey community through advocacy, cultural celebration, and community building.
               </p>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <Heart className="w-6 h-6 text-orange-400 mt-1 flex-shrink-0" />
-                  <p className="opacity-90">Facilitate communication between Asian Americans and governing bodies including BOE, city councils, mayor's office, and NJ state government</p>
+                  <p className="opacity-90 text-sm md:text-base break-words">Facilitate communication between Asian Americans and governing bodies including BOE, city councils, mayor's office, and NJ state government</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <Users className="w-6 h-6 text-orange-400 mt-1 flex-shrink-0" />
-                  <p className="opacity-90">Develop collaborative relationships between Asian Americans and other ethnic groups</p>
+                  <p className="opacity-90 text-sm md:text-base break-words">Develop collaborative relationships between Asian Americans and other ethnic groups</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <Award className="w-6 h-6 text-orange-400 mt-1 flex-shrink-0" />
-                  <p className="opacity-90">Promote cultural understanding and celebrate Asian American heritage</p>
+                  <p className="opacity-90 text-sm md:text-base break-words">Promote cultural understanding and celebrate Asian American heritage</p>
                 </div>
               </div>
             </div>

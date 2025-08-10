@@ -257,9 +257,8 @@ export default function ScholarshipForm() {
 
     const filename = `AAASJ_Scholarship_Application_${formData.studentName || 'Applicant'}.pdf`
 
-    // Create a blob for server upload and also trigger a local download
+    // Create a blob for server upload only (no browser download)
     const blob = doc.output('blob')
-    doc.save(filename)
 
     return { blob, filename }
   }

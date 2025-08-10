@@ -18,7 +18,6 @@ const encryptPassword = (password: string): string => {
   }
   return btoa(encrypted) // Base64 encode
 }
-
 const decryptPassword = (encrypted: string): string => {
   try {
     const decoded = atob(encrypted) // Base64 decode

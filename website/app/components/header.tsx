@@ -44,7 +44,7 @@ export default function Header() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3">
+          <Link href="/" className="flex items-center">
             <div className="w-12 h-12 relative">
               <Image
                 src="/pictures/aaasj_logo.png"
@@ -53,7 +53,6 @@ export default function Header() {
                 className="object-contain"
               />
             </div>
-            <span className="text-xl font-bold text-white">AAASJ</span>
           </Link>
 
           {/* Desktop Navigation */}

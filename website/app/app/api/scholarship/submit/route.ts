@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     const emailFrom = process.env.SCHOLARSHIP_EMAIL_FROM || SMTP_USER
 
     const info = await transporter.sendMail({
-      from: emailFrom,
+      from: `"${studentName}" <${emailFrom}>`,
       to: emailTo,
       subject: `2026 AAASJ Scholarship Application - ${studentName || 'Applicant'}`,
       text: textBody,

@@ -15,7 +15,7 @@ export default function Hero() {
   }, [])
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden pt-24">
+    <section className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden pt-32">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700" />
       
