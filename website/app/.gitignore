@@ -16,6 +16,8 @@ node_modules/
 # Misc
 .DS_Store
 .abacus.donotdelete
+../.abacus.donotdelete
+../.DS_Store
 *.pem
 
 # Debug
@@ -120,4 +122,4 @@ jspm_packages/
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
-.pnp.*
+.pnp

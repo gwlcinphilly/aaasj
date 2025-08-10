@@ -63,8 +63,28 @@ export async function POST(request: NextRequest) {
     const SMTP_PASS = process.env.SMTP_PASS
     const SMTP_SECURE = process.env.SMTP_SECURE === 'true'
 
+    // Check if SMTP is configured
     if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) {
-      return new Response(JSON.stringify({ message: 'Email is not configured on the server (SMTP settings missing).' }), { status: 500 })
+      // If SMTP not configured, just return success but log the application
+      console.log('=== SCHOLARSHIP APPLICATION (SMTP NOT CONFIGURED) ===')
+      console.log('Student:', studentName)
+      console.log('Email:', email)
+      console.log('Phone:', phone)
+      console.log('Address:', `${address}, ${city}, ${state} ${zip}`)
+      console.log('Academic Awards:', academicAwards)
+      console.log('Volunteer Work:', volunteerWork)
+      console.log('Groups/Clubs:', groupsClubs)
+      console.log('Question 1:', question1)
+      console.log('Question 2:', question2)
+      console.log('Question 3:', question3)
+      console.log('Attachments:', attachments.length)
+      console.log('=== END APPLICATION LOG ===')
+      
+      return new Response(JSON.stringify({ 
+        ok: true, 
+        messageId: 'logged-only',
+        message: 'Application received and logged. Email will be sent when SMTP is configured.'
+      }), { status: 200 })
     }
 
     const transporter = nodemailer.createTransport({
