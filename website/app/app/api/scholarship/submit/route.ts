@@ -1,27 +1,21 @@
 import type { NextRequest } from 'next/server'
-import nodemailer from 'nodemailer'
+import { Resend } from 'resend'
 
 export const runtime = 'nodejs'
 
-// Add a GET endpoint for testing SMTP configuration
+const resend = new Resend(process.env.RESEND_API_KEY)
+
+// Add a GET endpoint for testing email configuration
 export async function GET() {
-  const SMTP_HOST = process.env.SMTP_HOST
-  const SMTP_PORT = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : undefined
-  const SMTP_USER = process.env.SMTP_USER
-  const SMTP_PASS = process.env.SMTP_PASS
-  const SMTP_SECURE = process.env.SMTP_SECURE === 'true'
+  const RESEND_API_KEY = process.env.RESEND_API_KEY
   const SCHOLARSHIP_EMAIL_TO = process.env.SCHOLARSHIP_EMAIL_TO || 'scholarship@aaa-sj.org'
-  const SCHOLARSHIP_EMAIL_FROM = process.env.SCHOLARSHIP_EMAIL_FROM || SMTP_USER
+  const SCHOLARSHIP_EMAIL_FROM = process.env.SCHOLARSHIP_EMAIL_FROM || 'noreply@aaasj.org'
 
   const config = {
-    SMTP_HOST: SMTP_HOST ? 'SET' : 'MISSING',
-    SMTP_PORT: SMTP_PORT || 'MISSING',
-    SMTP_USER: SMTP_USER ? 'SET' : 'MISSING',
-    SMTP_PASS: SMTP_PASS ? 'SET' : 'MISSING',
-    SMTP_SECURE,
+    RESEND_API_KEY: RESEND_API_KEY ? 'SET' : 'MISSING',
     SCHOLARSHIP_EMAIL_TO,
-    SCHOLARSHIP_EMAIL_FROM: SCHOLARSHIP_EMAIL_FROM || 'MISSING',
-    isConfigured: !!(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS)
+    SCHOLARSHIP_EMAIL_FROM,
+    isConfigured: !!RESEND_API_KEY
   }
 
   return Response.json(config)
@@ -109,22 +103,18 @@ export async function POST(request: NextRequest) {
 
     console.log('Email body prepared, length:', textBody.length, 'characters')
 
-    const SMTP_HOST = process.env.SMTP_HOST
-    const SMTP_PORT = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : undefined
-    const SMTP_USER = process.env.SMTP_USER
-    const SMTP_PASS = process.env.SMTP_PASS
-    const SMTP_SECURE = process.env.SMTP_SECURE === 'true'
+    const RESEND_API_KEY = process.env.RESEND_API_KEY
+    const SCHOLARSHIP_EMAIL_TO = process.env.SCHOLARSHIP_EMAIL_TO || 'scholarship@aaa-sj.org'
+    const SCHOLARSHIP_EMAIL_FROM = process.env.SCHOLARSHIP_EMAIL_FROM || 'noreply@aaasj.org'
 
-    console.log('SMTP Configuration Check:')
-    console.log('- SMTP_HOST:', SMTP_HOST ? 'SET' : 'MISSING')
-    console.log('- SMTP_PORT:', SMTP_PORT || 'MISSING')
-    console.log('- SMTP_USER:', SMTP_USER ? 'SET' : 'MISSING')
-    console.log('- SMTP_PASS:', SMTP_PASS ? 'SET' : 'MISSING')
-    console.log('- SMTP_SECURE:', SMTP_SECURE)
+    console.log('Resend Configuration Check:')
+    console.log('- RESEND_API_KEY:', RESEND_API_KEY ? 'SET' : 'MISSING')
+    console.log('- SCHOLARSHIP_EMAIL_TO:', SCHOLARSHIP_EMAIL_TO)
+    console.log('- SCHOLARSHIP_EMAIL_FROM:', SCHOLARSHIP_EMAIL_FROM)
 
-    // Check if SMTP is configured
-    if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) {
-      console.log('=== SMTP NOT CONFIGURED - LOGGING APPLICATION ONLY ===')
+    // Check if Resend is configured
+    if (!RESEND_API_KEY) {
+      console.log('=== RESEND NOT CONFIGURED - LOGGING APPLICATION ONLY ===')
       console.log('Student:', studentName)
       console.log('Email:', email)
       console.log('Phone:', phone)
@@ -138,63 +128,42 @@ export async function POST(request: NextRequest) {
       console.log('Attachments:', attachments.length)
       console.log('=== END APPLICATION LOG ===')
       
-      const missingVars = []
-      if (!SMTP_HOST) missingVars.push('SMTP_HOST')
-      if (!SMTP_PORT) missingVars.push('SMTP_PORT')
-      if (!SMTP_USER) missingVars.push('SMTP_USER')
-      if (!SMTP_PASS) missingVars.push('SMTP_PASS')
-      
       return new Response(JSON.stringify({ 
         ok: true, 
         messageId: 'logged-only',
-        message: `Application received and logged. Email will be sent when SMTP is configured. Missing variables: ${missingVars.join(', ')}`
+        message: 'Application received and logged. Email will be sent when Resend API key is configured.'
       }), { status: 200 })
     }
 
-    console.log('SMTP configured, creating transporter...')
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_SECURE,
-      auth: { user: SMTP_USER, pass: SMTP_PASS },
-    })
+    console.log('Resend configured, sending email...')
 
-    console.log('Transporter created, verifying connection...')
-    try {
-      await transporter.verify()
-      console.log('SMTP connection verified successfully')
-    } catch (verifyError) {
-      console.error('SMTP verification failed:', verifyError)
-      throw new Error(`SMTP verification failed: ${verifyError}`)
-    }
+    // Convert attachments to Resend format
+    const resendAttachments = attachments.map(attachment => ({
+      filename: attachment.filename,
+      content: attachment.content.toString('base64'),
+      contentType: attachment.contentType || 'application/octet-stream'
+    }))
 
-    const emailTo = process.env.SCHOLARSHIP_EMAIL_TO || 'scholarship@aaa-sj.org'
-    const emailFrom = process.env.SCHOLARSHIP_EMAIL_FROM || SMTP_USER
-
-    console.log('Email configuration:')
-    console.log('- To:', emailTo)
-    console.log('- From:', emailFrom)
-    console.log('- Reply-To:', email || 'not set')
-
-    console.log('Sending email...')
-    const info = await transporter.sendMail({
-      from: `"${studentName}" <${emailFrom}>`,
-      to: emailTo,
+    const { data, error } = await resend.emails.send({
+      from: SCHOLARSHIP_EMAIL_FROM,
+      to: SCHOLARSHIP_EMAIL_TO,
+      replyTo: email,
       subject: `2026 AAASJ Scholarship Application - ${studentName || 'Applicant'}`,
       text: textBody,
-      attachments,
-      replyTo: email || undefined,
+      attachments: resendAttachments,
     })
 
+    if (error) {
+      console.error('Resend email error:', error)
+      throw new Error(`Email sending failed: ${error.message}`)
+    }
+
     console.log('Email sent successfully!')
-    console.log('- Message ID:', info.messageId)
-    console.log('- Response:', info.response)
-    console.log('- Accepted recipients:', info.accepted)
-    console.log('- Rejected recipients:', info.rejected)
-    console.log('- Pending recipients:', info.pending)
+    console.log('- Message ID:', data?.id)
+    console.log('- Response:', data)
 
     console.log('=== SCHOLARSHIP SUBMISSION SUCCESS ===')
-    return new Response(JSON.stringify({ ok: true, messageId: info.messageId }), { status: 200 })
+    return new Response(JSON.stringify({ ok: true, messageId: data?.id }), { status: 200 })
   } catch (error: any) {
     console.error('=== SCHOLARSHIP SUBMISSION ERROR ===')
     console.error('Error type:', error.constructor.name)

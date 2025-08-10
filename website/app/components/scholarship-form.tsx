@@ -310,54 +310,38 @@ export default function ScholarshipForm() {
       return
     }
 
-    // Generate PDF for email attachment
-    const { blob: pdfBlob, filename: pdfFilename } = generateApplicationPdf()
-    
-    // Create email body
-    const emailBody = `2026 AAASJ Community Service Scholarship Application
+    setIsSubmitting(true)
 
-STUDENT PROFILE:
-Student Name: ${formData.studentName}
-Address: ${formData.address}
-City: ${formData.city}
-State: ${formData.state}
-Zip: ${formData.zip}
-Email: ${formData.email}
-Phone: ${formData.phone}
+    try {
+      // Build server payload
+      const { blob: pdfBlob, filename: pdfFilename } = generateApplicationPdf()
 
-Academic Awards/Achievements:
-${formData.academicAwards}
+      const formDataToSend = new FormData()
+      Object.entries(formData).forEach(([key, value]) => {
+        formDataToSend.append(key, value)
+      })
+      // Attach generated PDF
+      formDataToSend.append('generatedPdf', pdfBlob, pdfFilename)
+      // Attach uploads
+      uploads.forEach((file) => formDataToSend.append('files', file, file.name))
 
-Volunteer Work/Community Service:
-${formData.volunteerWork}
+      const res = await fetch('/api/scholarship/submit', {
+        method: 'POST',
+        body: formDataToSend,
+      })
 
-Groups/Clubs/Organizations:
-${formData.groupsClubs}
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.message || 'Submission failed')
+      }
 
-ESSAY QUESTIONS:
-
-1. What do you believe are the most pressing issues or needs in the Asian American community in South Jersey?
-${formData.question1}
-
-2. What have you done to help/address these issues/needs?
-${formData.question2}
-
-3. Please share any past community services, contributions, and achievements you have made to the Asian American community in South Jersey.
-${formData.question3}
-
----
-This application was submitted via the AAASJ website.
-Generated on: ${new Date().toLocaleDateString()}`
-
-    // Create mailto link
-    const subject = encodeURIComponent(`2026 AAASJ Scholarship Application - ${formData.studentName || 'Applicant'}`)
-    const body = encodeURIComponent(emailBody)
-    const mailtoLink = `mailto:scholarship@aaa-sj.org?subject=${subject}&body=${body}`
-
-    // Open email client
-    window.open(mailtoLink, '_blank')
-    
-    toast.success('Email client opened! Please attach the generated PDF and any additional files before sending.')
+      toast.success('Application submitted! We have emailed your application to scholarship@aaa-sj.org.')
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error?.message || 'Could not submit application. Please try again later.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
