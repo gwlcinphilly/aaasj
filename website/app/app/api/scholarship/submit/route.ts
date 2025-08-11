@@ -3,8 +3,6 @@ import { Resend } from 'resend'
 
 export const runtime = 'nodejs'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 // Add a GET endpoint for testing email configuration
 export async function GET() {
   const RESEND_API_KEY = process.env.RESEND_API_KEY
@@ -137,6 +135,9 @@ export async function POST(request: NextRequest) {
 
     console.log('Resend configured, sending email...')
 
+    // Initialize Resend only when API key is available
+    const resend = new Resend(RESEND_API_KEY)
+
     // Convert attachments to Resend format
     const resendAttachments = attachments.map(attachment => ({
       filename: attachment.filename,
@@ -177,7 +178,9 @@ export async function POST(request: NextRequest) {
         if (typeof error === 'string') {
           errorMessage = error
         } else if (error && typeof error === 'object') {
-          errorMessage = error.message || error.error || error.details || JSON.stringify(error)
+          // Type-safe way to access error properties
+          const errorObj = error as any
+          errorMessage = errorObj.message || errorObj.error || errorObj.details || JSON.stringify(error)
         }
         
         throw new Error(`Email sending failed: ${errorMessage}`)
@@ -198,7 +201,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: any) {
     console.error('=== SCHOLARSHIP SUBMISSION ERROR ===')
-    console.error('Error type:', error.constructor.name)
+    console.error('Error type:', error?.constructor?.name)
     console.error('Error message:', error?.message)
     console.error('Error stack:', error?.stack)
     console.error('Full error object:', JSON.stringify(error, null, 2))
