@@ -144,26 +144,58 @@ export async function POST(request: NextRequest) {
       contentType: attachment.contentType || 'application/octet-stream'
     }))
 
-    const { data, error } = await resend.emails.send({
-      from: SCHOLARSHIP_EMAIL_FROM,
-      to: SCHOLARSHIP_EMAIL_TO,
-      replyTo: email,
-      subject: `2026 AAASJ Scholarship Application - ${studentName || 'Applicant'}`,
-      text: textBody,
-      attachments: resendAttachments,
-    })
+    console.log('Email details:')
+    console.log('- From:', SCHOLARSHIP_EMAIL_FROM)
+    console.log('- To:', SCHOLARSHIP_EMAIL_TO)
+    console.log('- Reply-To:', email)
+    console.log('- Subject:', `2026 AAASJ Scholarship Application - ${studentName || 'Applicant'}`)
+    console.log('- Text length:', textBody.length)
+    console.log('- Attachments:', resendAttachments.length)
 
-    if (error) {
-      console.error('Resend email error:', error)
-      throw new Error(`Email sending failed: ${error.message}`)
+    try {
+      const { data, error } = await resend.emails.send({
+        from: SCHOLARSHIP_EMAIL_FROM,
+        to: SCHOLARSHIP_EMAIL_TO,
+        replyTo: email,
+        subject: `2026 AAASJ Scholarship Application - ${studentName || 'Applicant'}`,
+        text: textBody,
+        attachments: resendAttachments,
+      })
+
+      console.log('Resend API response:')
+      console.log('- Data:', data)
+      console.log('- Error:', error)
+
+      if (error) {
+        console.error('Resend email error:', error)
+        console.error('Error type:', typeof error)
+        console.error('Error keys:', Object.keys(error))
+        console.error('Full error object:', JSON.stringify(error, null, 2))
+        
+        // Handle different error formats
+        let errorMessage = 'Unknown error'
+        if (typeof error === 'string') {
+          errorMessage = error
+        } else if (error && typeof error === 'object') {
+          errorMessage = error.message || error.error || error.details || JSON.stringify(error)
+        }
+        
+        throw new Error(`Email sending failed: ${errorMessage}`)
+      }
+
+      console.log('Email sent successfully!')
+      console.log('- Message ID:', data?.id)
+      console.log('- Response:', data)
+
+      console.log('=== SCHOLARSHIP SUBMISSION SUCCESS ===')
+      return new Response(JSON.stringify({ ok: true, messageId: data?.id }), { status: 200 })
+    } catch (resendError: any) {
+      console.error('Resend API call failed:')
+      console.error('- Error:', resendError)
+      console.error('- Message:', resendError?.message)
+      console.error('- Stack:', resendError?.stack)
+      throw resendError
     }
-
-    console.log('Email sent successfully!')
-    console.log('- Message ID:', data?.id)
-    console.log('- Response:', data)
-
-    console.log('=== SCHOLARSHIP SUBMISSION SUCCESS ===')
-    return new Response(JSON.stringify({ ok: true, messageId: data?.id }), { status: 200 })
   } catch (error: any) {
     console.error('=== SCHOLARSHIP SUBMISSION ERROR ===')
     console.error('Error type:', error.constructor.name)
@@ -172,6 +204,12 @@ export async function POST(request: NextRequest) {
     console.error('Full error object:', JSON.stringify(error, null, 2))
     console.error('=== END ERROR LOG ===')
     
-    return new Response(JSON.stringify({ message: error?.message || 'Internal Server Error' }), { status: 500 })
+    // Temporary: Return detailed error for debugging
+    return new Response(JSON.stringify({ 
+      message: error?.message || 'Internal Server Error',
+      errorType: error?.constructor?.name,
+      errorStack: error?.stack,
+      fullError: JSON.stringify(error, null, 2)
+    }), { status: 500 })
   }
 }

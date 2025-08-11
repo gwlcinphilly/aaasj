@@ -310,11 +310,13 @@ export default function ScholarshipForm() {
       return
     }
 
+    console.log('=== SUBMITTING SCHOLARSHIP APPLICATION ===')
     setIsSubmitting(true)
 
     try {
       // Build server payload
       const { blob: pdfBlob, filename: pdfFilename } = generateApplicationPdf()
+      console.log('Generated PDF:', pdfFilename, 'Size:', pdfBlob.size)
 
       const formDataToSend = new FormData()
       Object.entries(formData).forEach(([key, value]) => {
@@ -325,19 +327,27 @@ export default function ScholarshipForm() {
       // Attach uploads
       uploads.forEach((file) => formDataToSend.append('files', file, file.name))
 
+      console.log('Sending to /api/scholarship/submit...')
       const res = await fetch('/api/scholarship/submit', {
         method: 'POST',
         body: formDataToSend,
       })
 
+      console.log('Response status:', res.status)
+      console.log('Response ok:', res.ok)
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
+        console.error('API Error:', err)
         throw new Error(err?.message || 'Submission failed')
       }
 
+      const result = await res.json()
+      console.log('API Success:', result)
+
       toast.success('Application submitted! We have emailed your application to scholarship@aaa-sj.org.')
     } catch (error: any) {
-      console.error(error)
+      console.error('Submission error:', error)
       toast.error(error?.message || 'Could not submit application. Please try again later.')
     } finally {
       setIsSubmitting(false)
