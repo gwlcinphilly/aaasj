@@ -57,19 +57,9 @@ export async function POST(request: NextRequest) {
     // Assemble attachments
     const attachments: Array<{ filename: string; content: Buffer; contentType?: string }> = []
 
-    // Generated PDF
-    const generatedPdf = formData.get('generatedPdf') as unknown as File | null
-    if (generatedPdf && typeof generatedPdf.arrayBuffer === 'function') {
-      const buf = Buffer.from(await generatedPdf.arrayBuffer())
-      attachments.push({ filename: (generatedPdf as any).name || 'application.pdf', content: buf, contentType: generatedPdf.type || 'application/pdf' })
-      console.log('Generated PDF attached:', (generatedPdf as any).name || 'application.pdf', 'Size:', buf.length, 'bytes')
-    } else {
-      console.log('No generated PDF found or invalid format')
-    }
-
-    // User uploads (multiple 'files')
+    // Process all uploaded files (including the saved PDF)
     const files = formData.getAll('files') as unknown as File[]
-    console.log('User files found:', files.length)
+    console.log('Files found:', files.length)
     for (const f of files) {
       if (!f || typeof (f as any).arrayBuffer !== 'function') {
         console.log('Skipping invalid file:', f)

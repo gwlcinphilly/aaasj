@@ -89,6 +89,28 @@ export default function ScholarshipForm() {
     }
   }
 
+  // Helper function to check if a file is a duplicate
+  const isDuplicateFile = (newFile: File, existingFiles: File[]): boolean => {
+    return existingFiles.some(existingFile => 
+      existingFile.name === newFile.name && 
+      existingFile.size === newFile.size &&
+      existingFile.type === newFile.type
+    )
+  }
+
+  // Helper function to remove duplicates from file array
+  const removeDuplicateFiles = (files: File[]): File[] => {
+    const seen = new Set<string>()
+    return files.filter(file => {
+      const key = `${file.name}-${file.size}-${file.type}`
+      if (seen.has(key)) {
+        return false
+      }
+      seen.add(key)
+      return true
+    })
+  }
+
   const handleFilesSelected = (filesList: FileList | null) => {
     if (!filesList) return
     const incoming = Array.from(filesList)
@@ -112,6 +134,10 @@ export default function ScholarshipForm() {
         toast.error(`${file.name} is not a supported file type`)
         return false
       }
+      if (isDuplicateFile(file, uploads)) {
+        toast.error(`${file.name} is already uploaded`)
+        return false
+      }
       if (totalSize + file.size > maxSize) {
         toast.error(`${file.name} would exceed the 25MB total size limit`)
         return false
@@ -120,7 +146,10 @@ export default function ScholarshipForm() {
       return true
     })
 
-    setUploads(prev => [...prev, ...validFiles])
+    if (validFiles.length > 0) {
+      setUploads(prev => [...prev, ...validFiles])
+      toast.success(`${validFiles.length} file(s) added successfully`)
+    }
   }
 
   const removeUploadAt = (idx: number) => {
@@ -287,16 +316,14 @@ export default function ScholarshipForm() {
     // Create a File object from the blob
     const pdfFile = new File([pdfBlob], pdfFilename, { type: 'application/pdf' })
     
-    // Add to uploads if not already present
-    const existingPdfIndex = uploads.findIndex(file => file.name === pdfFilename)
-    if (existingPdfIndex === -1) {
+    // Add to uploads if not already present, or replace if it exists
+    if (!isDuplicateFile(pdfFile, uploads)) {
       setUploads(prev => [pdfFile, ...prev])
     } else {
-      // Replace existing PDF
+      // Replace existing PDF (update to latest version)
       setUploads(prev => {
-        const newUploads = [...prev]
-        newUploads[existingPdfIndex] = pdfFile
-        return newUploads
+        const newUploads = prev.filter(file => !(file.name === pdfFilename && file.type === 'application/pdf'))
+        return [pdfFile, ...newUploads]
       })
     }
 
@@ -314,18 +341,20 @@ export default function ScholarshipForm() {
     setIsSubmitting(true)
 
     try {
-      // Build server payload
-      const { blob: pdfBlob, filename: pdfFilename } = generateApplicationPdf()
-      console.log('Generated PDF:', pdfFilename, 'Size:', pdfBlob.size)
-
       const formDataToSend = new FormData()
       Object.entries(formData).forEach(([key, value]) => {
         formDataToSend.append(key, value)
       })
-      // Attach generated PDF
-      formDataToSend.append('generatedPdf', pdfBlob, pdfFilename)
-      // Attach uploads
-      uploads.forEach((file) => formDataToSend.append('files', file, file.name))
+      
+      // Remove any duplicates as a final safeguard before sending
+      const deduplicatedUploads = removeDuplicateFiles(uploads)
+      if (deduplicatedUploads.length < uploads.length) {
+        console.log(`Removed ${uploads.length - deduplicatedUploads.length} duplicate file(s) before sending`)
+      }
+      
+      // Only attach deduplicated uploads (which already includes the saved PDF)
+      deduplicatedUploads.forEach((file) => formDataToSend.append('files', file, file.name))
+      console.log('Attaching files:', deduplicatedUploads.map(f => f.name))
 
       console.log('Sending to /api/scholarship/submit...')
       const res = await fetch('/api/scholarship/submit', {
@@ -615,9 +644,16 @@ export default function ScholarshipForm() {
                 />
                 {uploads.length > 0 && (
                   <div className="mt-2 space-y-2">
+                    <div className="text-xs text-white/70 mb-2">
+                      {uploads.length} file{uploads.length !== 1 ? 's' : ''} uploaded 
+                      ({(uploads.reduce((sum, file) => sum + file.size, 0) / (1024 * 1024)).toFixed(1)}MB total)
+                    </div>
                     {uploads.map((file, idx) => (
                       <div key={`${file.name}-${idx}`} className="flex items-center justify-between text-sm text-white/90 bg-white/5 rounded p-2">
-                        <span className="truncate mr-2">{file.name}</span>
+                        <div className="truncate mr-2">
+                          <span>{file.name}</span>
+                          <span className="text-white/50 ml-2">({(file.size / (1024 * 1024)).toFixed(1)}MB)</span>
+                        </div>
                         <button type="button" onClick={() => removeUploadAt(idx)} className="text-white/70 hover:text-white flex items-center gap-1">
                           <X className="w-4 h-4" /> Remove
                         </button>
@@ -632,7 +668,7 @@ export default function ScholarshipForm() {
                 <CardContent className="p-4">
                   <p className="text-blue-200 text-sm">
                     <FileText className="w-4 h-4 inline mr-2" />
-                    <strong>Important:</strong> A PDF of your application will be generated and attached, along with any files you upload. All components must be received by September 15, 2025.
+                    <strong>Important:</strong> A PDF of your application will be generated and attached, along with any files you upload. Duplicate files are automatically detected and removed. All components must be received by September 15, 2025.
                   </p>
                 </CardContent>
               </Card>
