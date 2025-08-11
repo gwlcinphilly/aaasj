@@ -157,6 +157,7 @@ export async function POST(request: NextRequest) {
       const { data, error } = await resend.emails.send({
         from: SCHOLARSHIP_EMAIL_FROM,
         to: SCHOLARSHIP_EMAIL_TO,
+        cc: email, // Add user's email to CC
         replyTo: email,
         subject: `2026 AAASJ Scholarship Application - ${studentName || 'Applicant'}`,
         text: textBody,
