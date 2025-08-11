@@ -314,18 +314,13 @@ export default function ScholarshipForm() {
     setIsSubmitting(true)
 
     try {
-      // Build server payload
-      const { blob: pdfBlob, filename: pdfFilename } = generateApplicationPdf()
-      console.log('Generated PDF:', pdfFilename, 'Size:', pdfBlob.size)
-
       const formDataToSend = new FormData()
       Object.entries(formData).forEach(([key, value]) => {
         formDataToSend.append(key, value)
       })
-      // Attach generated PDF
-      formDataToSend.append('generatedPdf', pdfBlob, pdfFilename)
-      // Attach uploads
+      // Only attach uploads (which already includes the saved PDF)
       uploads.forEach((file) => formDataToSend.append('files', file, file.name))
+      console.log('Attaching files:', uploads.map(f => f.name))
 
       console.log('Sending to /api/scholarship/submit...')
       const res = await fetch('/api/scholarship/submit', {
