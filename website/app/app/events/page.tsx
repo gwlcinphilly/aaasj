@@ -141,6 +141,14 @@ export default function EventsPage() {
                           {event.link === '/scholarship' ? 'Apply Now' : 'Learn More'}
                         </Button>
                       </Link>
+                    ) : event.registrationDisabled ? (
+                      <Button 
+                        className="w-full bg-gray-500 text-white cursor-not-allowed" 
+                        disabled
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Registration Coming Soon
+                      </Button>
                     ) : (
                       <Link href="/contact">
                         <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white btn-hover">

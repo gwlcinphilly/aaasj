@@ -14,13 +14,14 @@
   {
     "id": "static-2",
     "title": "Mid-autumn & Wellness Festival",
-    "date": "2025-10-04",
-    "time": "11:30 AM - 3:30 PM",
-    "location": "Hung Fa Supermarket Parking Lot",
-    "description": "Celebrate Mid-autumn Festival with our community! Traditional foods, wellness activities, cultural performances, and family-friendly entertainment. Rain date: October 5, 2025.",
+    "date": "Early Oct, 2025",
+    "time": "TBD",
+    "location": "TBD",
+    "description": "Details not confirmed yet. More details coming soon!",
     "image": "https://lh3.googleusercontent.com/pw/AP1GczMG18JZUaRiCRdd_RbTaQ__HgavYKKsoO-R_LR7ApJ6YqrNu1nAlvADNGU7OTCPKqLuqbrU6i2xf3QEMVCGIZP5a7hoo52C0QCTdoNVAwiBJXkkeh4=w1200-h800-c",
     "category": "Festival",
-    "status": "upcoming"
+    "status": "upcoming",
+    "registrationDisabled": true
   },
   {
     "id": "static-3",
