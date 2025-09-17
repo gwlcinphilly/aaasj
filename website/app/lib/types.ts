@@ -39,4 +39,5 @@ export type EventItem = {
   category?: string
   status: 'upcoming' | 'past'
   link?: string
+  registrationDisabled?: boolean
 }

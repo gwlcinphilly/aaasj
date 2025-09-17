@@ -3,6 +3,7 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { randomUUID } from 'crypto'
 import { EventItem } from '@/lib/types'
+import { requireAuth, optionalAuth } from '@/lib/api-auth'
 
 const dataFile = path.join(process.cwd(), 'app', 'data', 'events.json')
 
@@ -29,7 +30,7 @@ async function writeEvents(events: EventItem[]) {
   await fs.writeFile(dataFile, JSON.stringify(events, null, 2), 'utf-8')
 }
 
-export async function GET() {
+export const GET = optionalAuth(async (req: NextRequest, user) => {
   const events = await readEvents()
   // Sort: upcoming first by date asc, then past by date desc
   const now = new Date()
@@ -44,9 +45,9 @@ export async function GET() {
   upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   past.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   return Response.json([...upcoming, ...past])
-}
+})
 
-export async function POST(req: NextRequest) {
+export const POST = requireAuth(async (req: NextRequest, user) => {
   try {
     const body = (await req.json()) as Partial<EventItem>
     if (!body.title || !body.date) {
@@ -71,9 +72,9 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     return new Response(e?.message || 'Invalid JSON', { status: 400 })
   }
-}
+})
 
-export async function PUT(req: NextRequest) {
+export const PUT = requireAuth(async (req: NextRequest, user) => {
   try {
     const body = (await req.json()) as Partial<EventItem> & { id?: string }
     if (!body.id) return new Response('Missing id', { status: 400 })
@@ -91,9 +92,9 @@ export async function PUT(req: NextRequest) {
   } catch (e: any) {
     return new Response(e?.message || 'Invalid JSON', { status: 400 })
   }
-}
+})
 
-export async function DELETE(req: NextRequest) {
+export const DELETE = requireAuth(async (req: NextRequest, user) => {
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
   if (!id) return new Response('Missing id', { status: 400 })
@@ -101,6 +102,6 @@ export async function DELETE(req: NextRequest) {
   const filtered = events.filter((e) => e.id !== id)
   await writeEvents(filtered)
   return new Response(null, { status: 204 })
-}
+})
 
 

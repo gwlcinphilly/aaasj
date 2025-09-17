@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { requireAuth, optionalAuth } from '@/lib/api-auth'
 
 const ALBUMS_FILE = path.join(process.cwd(), 'app', 'data', 'shared-albums.json')
 
@@ -338,16 +339,16 @@ async function fetchPhotosFromAlbum(shareUrl: string): Promise<Photo[]> {
   }
 }
 
-export async function GET() {
+export const GET = optionalAuth(async (req: NextRequest, user) => {
   try {
     const albums = await readAlbums()
     return Response.json({ albums })
   } catch (error) {
     return new Response('Failed to load albums', { status: 500 })
   }
-}
+})
 
-export async function POST(req: NextRequest) {
+export const POST = requireAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json()
     const { title, shareUrl, description, isPublic, fetchPhotos = false } = body
@@ -378,9 +379,9 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     return new Response('Failed to create album', { status: 500 })
   }
-}
+})
 
-export async function PUT(req: NextRequest) {
+export const PUT = requireAuth(async (req: NextRequest, user) => {
   try {
     const body = await req.json()
     const { albumId, action, photoId } = body
@@ -435,9 +436,9 @@ export async function PUT(req: NextRequest) {
     console.error('PUT /api/photos/albums error:', error)
     return new Response('Internal server error', { status: 500 })
   }
-}
+})
 
-export async function DELETE(req: NextRequest) {
+export const DELETE = requireAuth(async (req: NextRequest, user) => {
   try {
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')
@@ -458,4 +459,4 @@ export async function DELETE(req: NextRequest) {
   } catch (error) {
     return new Response('Failed to delete album', { status: 500 })
   }
-}
+})
