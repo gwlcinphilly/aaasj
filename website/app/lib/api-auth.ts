@@ -24,7 +24,7 @@ export async function authenticateApiRequest(req: NextRequest): Promise<Authenti
     }
 
     return {
-      id: session.user.id || email,
+      id: email, // Use email as id since that's what's set in auth config
       email,
       name: session.user.name || undefined
     }
