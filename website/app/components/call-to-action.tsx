@@ -108,7 +108,7 @@ export default function CallToAction() {
                     <div className="space-y-3 mb-6">
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-orange-400" />
-                        <span className="text-sm"><strong>Deadline:</strong> September 15, 2025</span>
+                        <span className="text-sm"><strong>Deadline:</strong> September 30, 2025</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-orange-400" />

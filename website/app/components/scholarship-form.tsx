@@ -40,7 +40,7 @@ export default function ScholarshipForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Application deadline (local time)
-  const applicationDeadline = useMemo(() => new Date('2025-09-15T23:59:59'), [])
+  const applicationDeadline = useMemo(() => new Date('2025-09-30T23:59:59'), [])
 
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -403,7 +403,7 @@ export default function ScholarshipForm() {
                   <Clock className="w-5 h-5" />
                   <span className="font-semibold text-lg">Application Deadline</span>
                 </div>
-                <p className="text-white text-2xl font-bold text-center">September 15, 2025</p>
+                <p className="text-white text-2xl font-bold text-center">September 30, 2025</p>
                 <p className="text-white/90 mt-2 text-center">
                   Time remaining: 
                   <span className="font-semibold ml-2">

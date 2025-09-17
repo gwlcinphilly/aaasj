@@ -5,7 +5,7 @@ export const siteUpcomingEvents: EventItem[] = [
   {
     id: 'static-1',
     title: '2025 AAASJ Community Service Scholarship',
-    date: '2025-09-15',
+    date: '2025-09-30',
     time: 'Apply Now',
     location: 'Online Application',
     description:

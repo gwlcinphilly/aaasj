@@ -100,7 +100,7 @@ export default function ScholarshipPage() {
         <div className="text-center">
           <Link href="/scholarship/apply">
             <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-              Apply for 2026 Scholarship by Sep 15, 2025
+              Apply for 2026 Scholarship by Sep 30, 2025
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>
